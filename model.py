@@ -6,13 +6,13 @@ import random
 class Model(object):
 
     def __init__(self,
-                 p = 0,
-                 q = 0,
-                 r = 0,
+                 prob_stimulus = 0,
+                 prob_interaction = 0,
+                 prob_move = 0,
                  characteristics_affected = []):
-        self.p = utils.set_valid('p', p, max = 1)
-        self.q = utils.set_valid('q', q, max = 1)
-        self.r = utils.set_valid('r', r, max = 1)
+        self.prob_stimulus = utils.set_valid(prob_stimulus, upper = 1, verbose = True, name = 'p')
+        self.prob_interaction = utils.set_valid(prob_interaction, upper = 1, verbose = True, name = 'q')
+        self.prob_move = utils.set_valid(prob_move, upper = 1, verbose = True, name = 'r')
         self.characteristics_affected = characteristics_affected
 
         self.time = 0
@@ -29,13 +29,13 @@ class Model(object):
 
     def step(self):
         self.time += 1
-        stimulus = random.uniform(0, 1) < self.p
+        stimulus = random.uniform(0, 1) < self.prob_stimulus
         for agent in self.agents:
             if stimulus:
-                agent.stimulus()
-            if random.uniform(0, 1) < self.q:
+                agent.stimulus(self.characteristics_affected)
+            if random.uniform(0, 1) < self.prob_interaction:
                 agent.interact()
-            if random.uniform(0, 1) < self.r:
+            if random.uniform(0, 1) < self.prob_move:
                 agent.move_community()
             agent.age()
             agent.update_pp()

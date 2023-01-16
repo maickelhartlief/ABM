@@ -6,20 +6,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
 
-n_agents = 100
-n_contacts = 0
-n_iterations = 250
+n_agents = 50
+n_iterations = 10000
 char_distr = 'normal' # could also be 'uniform'
 until_eligible = 4 # from a preset
 characteristics_affected = ['active', 'overt', 'continuous', 'expressive', 'outtaking'] # from a preset
-p = 0
-q = 0
-r = 0
+prob_stimulus = .25
+prob_interaction = .75
+prob_move = 0
 
 # create model
-model = Model(p = p, 
-              q = q,   
-              r = r,
+model = Model(prob_stimulus = prob_stimulus, 
+              prob_interaction = prob_interaction,   
+              prob_move = prob_move,
               characteristics_affected = characteristics_affected)
 
 # create agents
@@ -29,7 +28,7 @@ if char_distr == 'normal':
     samples = distr.rvs(n_agents * 8)
     characteristics = np.reshape(samples, (n_agents, 8))
 elif char_distr == 'uniform':
-    characteristics = np.random.uniform(0, 4, (n_agents, 8))
+    characteristics = np.random.uniform(0, 5, (n_agents, 8))
 
 for idx in range(n_agents):
     model.add_agent(Agent(idx, 
@@ -45,13 +44,7 @@ for idx in range(n_agents):
                           outtaking = characteristics[idx, 5], 
                           expressive = characteristics[idx, 6], 
                           social = characteristics[idx, 7],
-                          ses = random.uniform(0, 2)))
-
-# create communities
-for agent in model.agents:
-    for _ in range(n_contacts):
-        choice = random.choice(np.delete(model.agents, agent))
-        agent.add_contact(choice)
+                          ses = random.uniform(1, 3)))
 
 # run simulation
 for iteration in range(n_iterations):

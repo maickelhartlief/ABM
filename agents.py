@@ -5,7 +5,7 @@
 #   same characteristics as the previous owner of that house. 
 #   this seems odd.
 
-import utils
+from utils import set_valid
 
 import numpy as np
 import random
@@ -26,57 +26,56 @@ class Agent(object):
                  outtaking = 0, 
                  expressive = 0, 
                  social = 0,
-                 ses = 0,
-                 pp = 0):
+                 ses = 0):
         self.name = name
         self.model = model
         self.eligible = eligible
         self.until_eligible = until_eligible
         self.vote_duty = vote_duty
-        self.active = utils.set_valid('active', active)
-        self.overt = utils.set_valid('overt', overt)
-        self.autonomous = utils.set_valid('autonomous', autonomous)
-        self.approaching = utils.set_valid('approaching', approaching)
-        self.continuous = utils.set_valid('continuous', continuous)
-        self.outtaking = utils.set_valid('outtaking', outtaking)
-        self.expressive = utils.set_valid('expressive', expressive)
-        self.social = utils.set_valid('social', social)
-        self.ses = utils.set_valid('ses', ses, max = 2)
-        self.pps = np.array([utils.set_valid('pp', pp, max = 12)])
+        self.active = set_valid(active, verbose = True, name = 'active')
+        self.overt = set_valid(overt, verbose = True, name = 'overt')
+        self.autonomous = set_valid(autonomous, verbose = True, name = 'autonomous')
+        self.approaching = set_valid(approaching, verbose = True, name = 'approaching')
+        self.continuous = set_valid(continuous, verbose = True, name = 'continuous')
+        self.outtaking = set_valid(outtaking, verbose = True, name = 'outtaking')
+        self.expressive = set_valid(expressive, verbose = True, name = 'expressive')
+        self.social = set_valid(social, verbose = True, name = 'social')
+        self.ses = set_valid(ses, lower = 1, upper = 3, verbose = True, name = 'ses')
+        self.pps = np.array([])
         
         # initial settings for contacts and time spent in location
         self.move_community()
-
-
-    def add_contact(self, agent):
-        self.contacts = np.append(self.contacts, agent)
-
-
-    def remove_contact(self, agent):
-        self.contacts = np.delete(self.conacts, agent)
+        
+        # initialize ppz
+        self.update_pp()
+        
+        
 
 
     def modify_characteristic(self, characteristic):
         # small modification because characteristics range from 0-4 here instead of 1-5
-        return 3 * (characteristic - randint(1, 2)) / (self.autonomous + self.continuous)
+        return 3 * (characteristic - random.randint(1, 2)) / (self.autonomous + self.continuous)
 
 
     def stimulus(self, affected):
         # no policital participation means no subjection to stimuli
-        if pps[-1] == 0:
+        if self.pps[-1] == 0:
             return
         
         # only these 5 characteristics can be affected by stimuli
+        # NOTE: the netlogo code only checks whether values are valid after this step, 
+        #       meaning that over or underflow in autonomous and continuous will change 
+        #       the output of modify_charactastics(). we check it immediately.
         if 'active' in affected:
-            self.active += modify_characteristic(self.active)
+            self.active = set_valid(self.modify_characteristic(self.active) + self.active)
         if 'active' in affected:
-            self.overt += modify_characteristic(self.overt)
+            self.overt = set_valid(self.modify_characteristic(self.overt + self.overt))
         if 'active' in affected:
-            self.continuous += modify_characteristic(self.continuous)
+            self.continuous = set_valid(self.modify_characteristic(self.continuous) + self.continuous)
         if 'active' in affected:
-            self.expressive += modify_characteristic(self.expressive)
+            self.expressive = set_valid(self.modify_characteristic(self.expressive) + self.continuous)
         if 'active' in affected:
-            self.outtaking += modify_characteristic(self.outtaking)
+            self.outtaking = set_valid(self.modify_characteristic(self.outtaking) + self.continuous)
 
 
     def interaction_modifier(self):
@@ -84,7 +83,7 @@ class Agent(object):
         mod = random.randint(0, 1) / (self.autonomous + self.continuous)
         
         # modify less when interaction is cynical
-        if random.randint(0, 19 * (self.ses + 1)) == 0:
+        if random.randint(0, int(19 * self.ses)) == 0:
             mod /= 10
 
         return mod
@@ -98,7 +97,9 @@ class Agent(object):
             return
 
         # pick interaction partner
-        partner = random.choice(np.delete(self.model.agents, self))
+        partner = random.choice(self.model.agents)
+        while partner == self:
+            partner = random.choice(self.model.agents)
 
         
         # check whether partner's personality would accept interaction
@@ -129,7 +130,7 @@ class Agent(object):
             
 
     def move_community(self):
-        self.spent = 0
+        self.time_in_community = 1
         self.contacts = 0
 
  
@@ -137,9 +138,70 @@ class Agent(object):
         self.until_eligible -= 1
         if self.until_eligible <= 0:
             self.eligible = True
-        self.spent += 1
+        self.time_in_community += 1
 
 
-    def update_pp(self):        
-        # TODO currently not updated at all, lol
-        self.pps = np.append(self.pps, random.randint(0, 12))
+    def update_pp(self):
+        self.pps = np.append(self.pps, 0 if random.uniform(0, 1) > .1 else 1)
+        
+        if not self.eligible:
+            return
+        
+        # NOTE base model says there should maybe be stochasticity here, but there isn't yet
+        # NOTE: probably a mistake in base model where vote duty alone does not envoke checks for higher levels.
+        if self.vote_duty or self.active + self.approaching - (5 / 3) * self.ses > 3:
+            self.pps[-1] = 2
+        else:
+            return
+
+        # NOTE: base model uses model time, instead of time spent in community of agent. the latter makes much more sense
+        if self.active + self.overt + self.approaching + self.social + (2.5 * self.contacts ) / self.time_in_community  > 15:
+            self.pps[-1] = 3
+        else:
+            return
+        
+        if self.overt + self.expressive > 6:
+            self.pps[-1] = 4
+        else:
+            return
+
+        if self.overt + self.autonomous + self.approaching + self.outtaking > 12:
+            self.pps[-1] = 5
+        else:
+            return
+
+        if self.active + self.approaching - self.outtaking + self.expressive - self.social > 3:
+            self.pps[-1] = 6
+        else:
+            return
+
+        if self.overt + self.social + (2.5 * self.contacts ) / self.time_in_community > 9:
+            self.pps[-1] = 7
+        else:
+            return
+
+        if self.active + self.overt + self.approaching + self.outtaking + self.expressive + (5 / 3) * self.ses > 18:
+            self.pps[-1] = 8
+        else:
+            return
+
+        if self.continuous + self.expressive + (5 / 3) * self.ses > 9:
+            self.pps[-1] = 9
+        else:
+            return
+
+        if self.active + self.overt + self.continuous + (5 / 3) * self.ses > 12:
+            self.pps[-1] = 10
+        else:
+            return
+
+        if self.active + self.overt + self.approaching + self.continuous + (2.5 * self.contacts) / self.time_in_community + (5 / 3) * self.ses > 18:
+            self.pps[-1] = 11
+        else:
+            return
+
+        if self.active + self.overt + self.autonomous + self.approaching + self.continuous - self.outtaking + (2.5 * self.contacts) / self.time_in_community + (5 / 3) * self.ses > 18:
+            self.pps[-1] = 12
+        else:
+            return
+
