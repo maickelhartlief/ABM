@@ -5,36 +5,33 @@ import random
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
+import sys
+from importlib import import_module
 
-n_agents = 50
-n_iterations = 10000
-char_distr = 'normal' # could also be 'uniform'
-until_eligible = 4 # from a preset
-characteristics_affected = ['active', 'overt', 'continuous', 'expressive', 'outtaking'] # from a preset
-prob_stimulus = .25
-prob_interaction = .75
-prob_move = 0
+
+# import input parameter configuration (default: configs.normal)
+params = import_module('configs.' + ('normal' if len(sys.argv) < 2 else sys.argv[1]))
 
 # create model
-model = Model(prob_stimulus = prob_stimulus, 
-              prob_interaction = prob_interaction,   
-              prob_move = prob_move,
-              characteristics_affected = characteristics_affected)
+model = Model(prob_stimulus = params.prob_stimulus, 
+              prob_interaction = params.prob_interaction,   
+              prob_move = params.prob_move,
+              characteristics_affected = params.characteristics_affected)
 
 # create agents
-if char_distr == 'normal':
+if params.char_distr == 'normal':
     mu = 2
     distr = stats.truncnorm(-mu, mu, loc = mu, scale = 1)
-    samples = distr.rvs(n_agents * 8)
-    characteristics = np.reshape(samples, (n_agents, 8))
+    samples = distr.rvs(params.n_agents * 8)
+    characteristics = np.reshape(samples, (params.n_agents, 8))
 elif char_distr == 'uniform':
-    characteristics = np.random.uniform(0, 5, (n_agents, 8))
+    characteristics = np.random.uniform(0, 5, (params.n_agents, 8))
 
-for idx in range(n_agents):
+for idx in range(params.n_agents):
     model.add_agent(Agent(idx, 
                           model,
                           eligible = random.uniform(0, 1) < .8,
-                          until_eligible = until_eligible,
+                          until_eligible = params.until_eligible,
                           vote_duty = random.uniform(0, 1) < .03,
                           active = characteristics[idx, 0], 
                           overt = characteristics[idx, 1], 
@@ -47,7 +44,7 @@ for idx in range(n_agents):
                           ses = random.uniform(1, 3)))
 
 # run simulation
-for iteration in range(n_iterations):
+for iteration in range(params.n_iterations):
     model.step()
 
 # visualize results

@@ -26,7 +26,12 @@ class Agent(object):
                  outtaking = 0, 
                  expressive = 0, 
                  social = 0,
-                 ses = 0):
+                 ses = 0,
+                 char_modifiers = {'active' : .5, 
+                                   'overt' : .5, 
+                                   'continuous' : .5, 
+                                   'expressive' : .5, 
+                                   'outtaking' : .5}):
         self.name = name
         self.model = model
         self.eligible = eligible
@@ -42,6 +47,7 @@ class Agent(object):
         self.social = set_valid(social, verbose = True, name = 'social')
         self.ses = set_valid(ses, lower = 1, upper = 3, verbose = True, name = 'ses')
         self.pps = np.array([])
+        self.char_modifiers = char_modifiers
         
         # initial settings for contacts and time spent in location
         self.move_community()
@@ -54,7 +60,7 @@ class Agent(object):
 
     def modify_characteristic(self, characteristic):
         # small modification because characteristics range from 0-4 here instead of 1-5
-        return 3 * (characteristic - random.randint(1, 2)) / (self.autonomous + self.continuous)
+        return 3 * (self.char_modifiers[characteristic] - random.randint(0, 1)) / (self.autonomous + self.continuous)
 
 
     def stimulus(self, affected):
@@ -67,15 +73,15 @@ class Agent(object):
         #       meaning that over or underflow in autonomous and continuous will change 
         #       the output of modify_charactastics(). we check it immediately.
         if 'active' in affected:
-            self.active = set_valid(self.modify_characteristic(self.active) + self.active)
-        if 'active' in affected:
-            self.overt = set_valid(self.modify_characteristic(self.overt + self.overt))
-        if 'active' in affected:
-            self.continuous = set_valid(self.modify_characteristic(self.continuous) + self.continuous)
-        if 'active' in affected:
-            self.expressive = set_valid(self.modify_characteristic(self.expressive) + self.continuous)
-        if 'active' in affected:
-            self.outtaking = set_valid(self.modify_characteristic(self.outtaking) + self.continuous)
+            self.active = set_valid(self.modify_characteristic('active') + self.active)
+        if 'overt' in affected:
+            self.overt = set_valid(self.modify_characteristic('overt') + self.overt)
+        if 'continuous' in affected:
+            self.continuous = set_valid(self.modify_characteristic('continuous') + self.continuous)
+        if 'expressive' in affected:
+            self.expressive = set_valid(self.modify_characteristic('expressive') + self.continuous)
+        if 'outtaking' in affected:
+            self.outtaking = set_valid(self.modify_characteristic('outtaking') + self.continuous)
 
 
     def interaction_modifier(self):

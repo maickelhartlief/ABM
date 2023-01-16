@@ -9,7 +9,11 @@ class Model(object):
                  prob_stimulus = 0,
                  prob_interaction = 0,
                  prob_move = 0,
-                 characteristics_affected = []):
+                 characteristics_affected = {'active' : .5, 
+                                             'overt' : .5, 
+                                             'continuous' : .5, 
+                                             'expressive' : .5, 
+                                             'outtaking' : .5}):
         self.prob_stimulus = utils.set_valid(prob_stimulus, upper = 1, verbose = True, name = 'p')
         self.prob_interaction = utils.set_valid(prob_interaction, upper = 1, verbose = True, name = 'q')
         self.prob_move = utils.set_valid(prob_move, upper = 1, verbose = True, name = 'r')
@@ -32,7 +36,7 @@ class Model(object):
         stimulus = random.uniform(0, 1) < self.prob_stimulus
         for agent in self.agents:
             if stimulus:
-                agent.stimulus(self.characteristics_affected)
+                agent.stimulus(self.characteristics_affected.keys())
             if random.uniform(0, 1) < self.prob_interaction:
                 agent.interact()
             if random.uniform(0, 1) < self.prob_move:
