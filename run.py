@@ -31,7 +31,7 @@ if params.char_distr == 'normal': # truncated normal distribution, to stay withi
     distr = stats.truncnorm(-mu, mu, loc = mu, scale = 1)
     samples = distr.rvs(params.n_agents * 8)
     characteristics = np.reshape(samples, (params.n_agents, 8))
-elif char_distr == 'uniform': # uniform distribution within limits
+elif params.char_distr == 'uniform': # uniform distribution within limits
     characteristics = np.random.uniform(0, 5, (params.n_agents, 8))
 
 # intialize each agent
