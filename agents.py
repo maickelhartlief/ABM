@@ -12,6 +12,7 @@ TODO:
 - implement more of the presets
 - figure out why results don't math base model
 - implement more analysis
+- integrate mesa
 '''
 
 from utils import set_valid
@@ -118,6 +119,8 @@ class Agent(object):
                      is subjected to a stimulus
         inputs:
             - characteristics: name of the characteristic to modify
+        outputs:
+            - modification to characteristics
         '''
         return 3 * (self.char_modifiers[characteristic] - random.randint(0, 1)) / (self.autonomous + self.continuous)
 
@@ -153,6 +156,8 @@ class Agent(object):
         '''
         description: calculates how characteristics should be modified based on an interaction 
                      with another agent
+        outputs:
+            - modification to characteristics
         '''
 
         # set modification to political participation

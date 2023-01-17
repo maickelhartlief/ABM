@@ -1,5 +1,16 @@
 # returns closest value of param that is within bounds
 def set_valid(param, lower = 0, upper = 5, verbose = False, name = ''):
+    '''
+    description: returns closest value of param that is within bounds
+    inputs:
+        - param: desired parameter value
+        - lower: optional, lower limit for the parameter
+        - upper: optional, upper limit for the parameter
+        - verbose: optional, whether to print if the desired value is invalid
+        - name: optional, name of the parameter, for printing (only relevant if verbose)
+    outputs:
+        - closest valid parameter value
+    '''
     valid = True
     out = param
 
