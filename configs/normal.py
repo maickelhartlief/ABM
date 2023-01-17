@@ -1,3 +1,5 @@
+# these are the tunable parameters to set the political landscape 
+# used for presets in the base model
 n_agents = 100
 n_iterations = 5000
 char_distr = 'normal' # could also be 'uniform'

@@ -1,9 +1,18 @@
-# TODO:
-# meaning of global/local community:
-#   it seemse like the base model only looks at 1 local community, 
-#   which now means that a person moving always takes the exact 
-#   same characteristics as the previous owner of that house. 
-#   this seems odd.
+'''
+TODO:
+- meaning of global/local community:
+  it seemse like the base model only looks at 1 local community, 
+  which now means that a person moving always takes the exact 
+  same characteristics as the previous owner of that house. 
+  this seems odd.
+- potentially expand to multiple communities?
+   - support with theory about how communities interact and change
+   - what does a community represent? party? demographic? location? social network? (probably party)
+   - community class with community-wide variables?
+- implement more of the presets
+- figure out why results don't math base model
+- implement more analysis
+'''
 
 from utils import set_valid
 
@@ -11,11 +20,41 @@ import numpy as np
 import random
 
 class Agent(object):
+    '''
+    description: an Agent object represents a person in a community that has a political 
+                 participation based on characteristics, which are in turn modified by 
+                 interacting with other agents or with the environment
+    inputs: 
+        - name: unique identifier of agent
+        - model: model object agent is a part of
+        - until_eligible: optional, number of steps until an agent can vote
+        - vote_duty: optional, whether agent must vote
+        - active: optional, one of the agent's charactaristics
+        - overt: optional, one of the agent's charactaristics
+        - autonomous: optional, one of the agent's charactaristics
+        - continuous: optional, one of the agent's charactaristics
+        - outtaking: optional, one of the agent's charactaristics
+        - expressive: optional, one of the agent's charactaristics
+        - social: optional, one of the agent's charactaristics
+        - ses: optional, socio-economic status
+        - char_modifiers: optional, dictionary with tendencies for characteristics 
+          to change according to stimulus (>.5 = up, <.5 = down)
+    functions:
+        - modify_characteristics(characteristic): calculates how much a characteristic 
+                                                  should be modified during a stimulus
+        - stimulus(affected): adjust affected characteristics based on a model-wide stimulus
+        - interaction_modifier(): calculates how much characteristics should be modified 
+                                  during an interaction
+        - interact(): handle interaction with a random other agent in the community
+        - move_community(): replaces the agent with a new identical agent, simulating the 
+                            agent moving to a diferent community and another taking its place
+        - update_pp(): updates the political participation of the agent, based on its 
+                       characteristics.
+    '''
 
     def __init__(self, 
                  name,
                  model,
-                 eligible = True,
                  until_eligible = 0,
                  vote_duty = False,
                  active = 0, 
@@ -32,9 +71,26 @@ class Agent(object):
                                    'continuous' : .5, 
                                    'expressive' : .5, 
                                    'outtaking' : .5}):
+        '''
+        description: initializes a new Agent object
+        inputs:
+            - name: unique identifier of agent
+            - model: model object agent is a part of
+            - until_eligible: optional, number of steps until an agent can vote
+            - vote_duty: optional, whether agent must vote
+            - active: optional, one of the agent's charactaristics
+            - overt: optional, one of the agent's charactaristics
+            - autonomous: optional, one of the agent's charactaristics
+            - continuous: optional, one of the agent's charactaristics
+            - outtaking: optional, one of the agent's charactaristics
+            - expressive: optional, one of the agent's charactaristics
+            - social: optional, one of the agent's charactaristics
+            - ses: optional, socio-economic status
+            - char_modifiers: optional, dictionary with tendencies for characteristics 
+              to change according to stimulus (>.5 = up, <.5 = down)
+        '''
         self.name = name
         self.model = model
-        self.eligible = eligible
         self.until_eligible = until_eligible
         self.vote_duty = vote_duty
         self.active = set_valid(active, verbose = True, name = 'active')
@@ -55,15 +111,24 @@ class Agent(object):
         # initialize ppz
         self.update_pp()
         
-        
-
 
     def modify_characteristic(self, characteristic):
-        # small modification because characteristics range from 0-4 here instead of 1-5
+        '''
+        description: calculates how much a certain characteristic should change when agent 
+                     is subjected to a stimulus
+        inputs:
+            - characteristics: name of the characteristic to modify
+        '''
         return 3 * (self.char_modifiers[characteristic] - random.randint(0, 1)) / (self.autonomous + self.continuous)
 
 
     def stimulus(self, affected):
+        '''
+        description: subject agent to stimulus, affecting (some of) its characteristics
+        inputs:
+            - affected: list of names of characteristics that are affected by the stimulus
+        '''
+
         # no policital participation means no subjection to stimuli
         if self.pps[-1] == 0:
             return
@@ -85,6 +150,11 @@ class Agent(object):
 
 
     def interaction_modifier(self):
+        '''
+        description: calculates how characteristics should be modified based on an interaction 
+                     with another agent
+        '''
+
         # set modification to political participation
         mod = random.randint(0, 1) / (self.autonomous + self.continuous)
         
@@ -96,6 +166,10 @@ class Agent(object):
 
 
     def interact(self):
+        '''
+        description: attempts to interact with another agent, changing both their characteristics
+        '''
+
         # check whether personality would lead to interaction
         if self.pps[-1] < 3:
             return
@@ -126,9 +200,11 @@ class Agent(object):
         pps_diff = self.pps[-1] - partner.pps[-1]
         if pps_diff > 0:
             partner.active += p_mod
-            self.overt += p_mod # TODO seems like this should be mod instead of p_mod, but this is what the base model does
+            # TODO seems like this should be mod instead of p_mod, but this is what the base model does
+            self.overt += p_mod 
         elif pps_diff < 0:
             self.active += mod
+            # TODO seems like this should be mod instead of p_mod, but this is what the base model does
             partner.overt += mod
 
         self.contacts += 1
@@ -136,21 +212,33 @@ class Agent(object):
             
 
     def move_community(self):
+        '''
+        description: replaces the agent with a new identical agent, simulating the 
+                     agent moving to a diferent community and another taking its place
+        '''
         self.time_in_community = 1
         self.contacts = 0
+        self.until_eligible = self.model.until_eligible
 
  
     def age(self):
-        self.until_eligible -= 1
-        if self.until_eligible <= 0:
-            self.eligible = True
+        '''
+        description: updates the agent as time passes
+        '''
         self.time_in_community += 1
+        if self.until_eligible == 0:
+            return
 
+        self.until_eligible -= 1
+        
 
     def update_pp(self):
+        '''
+        description: calculates the agent's policical participation based on its characteristics
+        '''
         self.pps = np.append(self.pps, 0 if random.uniform(0, 1) > .1 else 1)
         
-        if not self.eligible:
+        if self.until_eligible != 0:
             return
         
         # NOTE base model says there should maybe be stochasticity here, but there isn't yet
@@ -160,6 +248,7 @@ class Agent(object):
         else:
             return
 
+        # increase the level based on characteristics, and stop as soon as 1 check fails.
         # NOTE: base model uses model time, instead of time spent in community of agent. the latter makes much more sense
         if self.active + self.overt + self.approaching + self.social + (2.5 * self.contacts ) / self.time_in_community  > 15:
             self.pps[-1] = 3
