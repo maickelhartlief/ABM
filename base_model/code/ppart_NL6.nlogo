@@ -52,7 +52,7 @@ to setup ; setting up the simulation
     set agentnum 100     ; number of agents to create: size of community (*/*)
     set selig 3          ; 3% not eligible to start with
     set sduty 20         ; 20% feel a duty to vote to start with
-    set-histogram-num-bars 12   ; setup histogram of levels
+    set-histogram-num-bars 13   ; setup histogram of levels
     action               ; initial setting of political environment, can be changed
                          ; using the Action button during the simulation to study the
                          ; effects of shocks etc.
@@ -595,7 +595,7 @@ r-p
 r-p
 1
 1000
-3.0
+1.0
 1
 1
 Stimuli
@@ -610,7 +610,7 @@ r-q
 r-q
 1
 1000
-2.0
+1.0
 1
 1
 Interaction
@@ -625,7 +625,7 @@ r-r
 r-r
 1
 1000
-737.0
+7.0
 1
 1
 Moving
@@ -649,7 +649,7 @@ CHOOSER
 presets
 presets
 "Manual" "Normal" "Repressive State" "Random World" "Stimuli Only" "Interaction Only" "Frequent Movers" "No Movers" "Close Election" "Election" "Assassination" "Dictatorship" "Hard Times"
-10
+0
 
 PLOT
 600
@@ -887,7 +887,7 @@ b2
 b2
 0
 1
-1.0
+0.5
 0.1
 1
 Exp
@@ -902,7 +902,7 @@ b3
 b3
 0
 1
-0.3
+0.5
 0.1
 1
 Cnt
@@ -917,7 +917,7 @@ b4
 b4
 0
 1
-1.0
+0.5
 0.1
 1
 Ovt
@@ -932,7 +932,7 @@ b5
 b5
 0
 1
-1.0
+0.4
 0.1
 1
 Act
@@ -957,7 +957,7 @@ n
 n
 1
 100
-24.0
+1.0
 1
 1
 Steps
@@ -1305,7 +1305,7 @@ Polygon -6459832 true true 38 138 66 149
 Polygon -6459832 true true 46 128 33 120 21 118 11 123 3 138 5 160 13 178 9 192 0 199 20 196 25 179 24 161 25 148 45 140
 Polygon -6459832 true true 67 122 96 126 63 144
 @#$#@#$#@
-NetLogo 6.1.1
+NetLogo 6.3.0
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@

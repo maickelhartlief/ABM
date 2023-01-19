@@ -76,6 +76,7 @@ class Member(object):
         '''
         description: initializes a new Agent object
         '''
+        self.pyramid = True #TODO does pp depend on previous value?
         self.unique_id = unique_id
         self.model = model
         self.until_eligible = until_eligible
@@ -247,6 +248,7 @@ class Member(object):
         self.pps = np.append(self.pps, 0 if random.uniform(0, 1) > .1 else 1)
         
         if self.until_eligible != 0:
+            self.pps[-1] = 0
             return
         
         # NOTE base model says there should maybe be stochasticity here, but there isn't yet
@@ -258,53 +260,53 @@ class Member(object):
 
         # increase the level based on characteristics, and stop as soon as 1 check fails.
         # NOTE: base model uses model time, instead of time spent in community of agent. the latter makes much more sense
-        if self.active + self.overt + self.approaching + self.social + (2.5 * self.contacts ) / self.time_in_community  > 15:
+        if self.active + self.overt + self.approaching + self.social + (2.5 * self.contacts) / self.model.time  > 15:
             self.pps[-1] = 3
-        else:
+        elif self.pyramid:
             return
         
         if self.overt + self.expressive > 6:
             self.pps[-1] = 4
-        else:
+        elif self.pyramid:
             return
-
+        
         if self.overt + self.autonomous + self.approaching + self.outtaking > 12:
             self.pps[-1] = 5
-        else:
+        elif self.pyramid:
             return
-
+        
         if self.active + self.approaching - self.outtaking + self.expressive - self.social > 3:
             self.pps[-1] = 6
-        else:
+        elif self.pyramid:
             return
-
+        
         if self.overt + self.social + (2.5 * self.contacts ) / self.time_in_community > 9:
             self.pps[-1] = 7
-        else:
+        elif self.pyramid:
             return
-
+        
         if self.active + self.overt + self.approaching + self.outtaking + self.expressive + (5 / 3) * self.ses > 18:
             self.pps[-1] = 8
-        else:
+        elif self.pyramid:
             return
-
+        
         if self.continuous + self.expressive + (5 / 3) * self.ses > 9:
             self.pps[-1] = 9
-        else:
+        elif self.pyramid:
             return
-
+        
         if self.active + self.overt + self.continuous + (5 / 3) * self.ses > 12:
             self.pps[-1] = 10
-        else:
+        elif self.pyramid:
             return
-
-        if self.active + self.overt + self.approaching + self.continuous + (2.5 * self.contacts) / self.time_in_community + (5 / 3) * self.ses > 18:
+        
+        if self.active + self.overt + self.approaching + self.continuous + (2.5 * self.contacts) / self.model.time + (5 / 3) * self.ses > 18:
             self.pps[-1] = 11
-        else:
+        elif self.pyramid:
             return
-
-        if self.active + self.overt + self.autonomous + self.approaching + self.continuous - self.outtaking + (2.5 * self.contacts) / self.time_in_community + (5 / 3) * self.ses > 18:
+        
+        if self.active + self.overt + self.autonomous + self.approaching + self.continuous - self.outtaking + (2.5 * self.contacts) / self.model.time + (5 / 3) * self.ses > 18:
             self.pps[-1] = 12
-        else:
+        elif self.pyramid:
             return
-
+        
