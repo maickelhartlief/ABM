@@ -2,7 +2,7 @@ import utils
 
 import numpy as np
 import random
-from mesa import Agent, Model, space, time
+from mesa import Agent, Model, space, time,  DataCollector
 
 class Party_agent(Agent):
     def __init__(self,
@@ -12,10 +12,10 @@ class Party_agent(Agent):
                  prob_interaction = 0,
                  prob_move = 0,
                  until_eligible = 0,
-                 characteristics_affected = {'active' : .5, 
-                                             'overt' : .5, 
-                                             'continuous' : .5, 
-                                             'expressive' : .5, 
+                 characteristics_affected = {'active' : .5,
+                                             'overt' : .5,
+                                             'continuous' : .5,
+                                             'expressive' : .5,
                                              'outtaking' : .5}):
         self.unique_id = unique_id
         self.model = model
@@ -42,20 +42,20 @@ class Party_agent(Agent):
 
 class Party_model(Model):
     '''
-    description: a Party object holds the environment parameters and manages all the agents. 
+    description: a Party object holds the environment parameters and manages all the agents.
     inputs:
         - prob_stimulus: optional, probability that a stimulus happens to all agents each step
         - prob_interaction = optional, probability that an agent interacts each step,
         - prob_move = optional, probability that an agent moves community,
         - until_eligible = optional, steps needed for new agents to be allowed to vote,
-        - characteristics_affected = optional, dictionary of affected characteristics when agent is 
+        - characteristics_affected = optional, dictionary of affected characteristics when agent is
           exposed to stimulus
     functions:
         - add_agent(agent): adds an agent to the model
         - step(): updates environment and takes a step for each agent
         - get_pps(): returns data of all agents' political participation over time
     '''
-    
+
     def __init__(self,
                  #outer_agent,
                  prob_stimulus,
@@ -84,6 +84,8 @@ class Party_model(Model):
         self.agents = np.array([])
         self.stimulus = False
 
+        self.datacollector = DataCollector(agent_reporters = {"PPS":"pps"})
+
 
     def add_agent(self, agent):
         '''
@@ -103,20 +105,19 @@ class Party_model(Model):
 
         # check whether stimulus happens for all agents
         self.stimulus = random.uniform(0, 1) < self.prob_stimulus
-        
+
+        self.datacollector.collect(self)
         self.schedule.step()
 
 
-    def get_pps(self):
-        '''
-        description: returns data of all agents' political participation over time
-        output:
-             - ndarray of shape (n_agents, time) of the political participation of each agent at each timestep
-        '''
-        return np.array([agent.pps for agent in self.agents])
+    # def get_pps(self):
+    #     '''
+    #     description: returns data of all agents' political participation over time
+    #     output:
+    #          - ndarray of shape (n_agents, time) of the political participation of each agent at each timestep
+    #     '''
+    #     return np.array([agent.pps for agent in self.agents])
 
 
     def get_voters(self):
         return len([1 for agent in self.agents if agent.pps >= 2])
-
-
