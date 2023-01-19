@@ -19,8 +19,9 @@ from utils import set_valid
 
 import numpy as np
 import random
+from mesa import Agent, Model, space, time
 
-class Agent(object):
+class Member(object):
     '''
     description: an Agent object represents a person in a community that has a political 
                  participation based on characteristics, which are in turn modified by 
@@ -54,7 +55,7 @@ class Agent(object):
     '''
 
     def __init__(self, 
-                 name,
+                 unique_id,
                  model,
                  until_eligible = 0,
                  vote_duty = False,
@@ -74,23 +75,8 @@ class Agent(object):
                                    'outtaking' : .5}):
         '''
         description: initializes a new Agent object
-        inputs:
-            - name: unique identifier of agent
-            - model: model object agent is a part of
-            - until_eligible: optional, number of steps until an agent can vote
-            - vote_duty: optional, whether agent must vote
-            - active: optional, one of the agent's charactaristics
-            - overt: optional, one of the agent's charactaristics
-            - autonomous: optional, one of the agent's charactaristics
-            - continuous: optional, one of the agent's charactaristics
-            - outtaking: optional, one of the agent's charactaristics
-            - expressive: optional, one of the agent's charactaristics
-            - social: optional, one of the agent's charactaristics
-            - ses: optional, socio-economic status
-            - char_modifiers: optional, dictionary with tendencies for characteristics 
-              to change according to stimulus (>.5 = up, <.5 = down)
         '''
-        self.name = name
+        self.unique_id = unique_id
         self.model = model
         self.until_eligible = until_eligible
         self.vote_duty = vote_duty
@@ -111,7 +97,24 @@ class Agent(object):
         
         # initialize ppz
         self.update_pp()
+
+    
+    def step(self):
+        # perform stimulus if applicable
+        if self.model.stimulus:
+            self.stimulus(self.model.characteristics_affected.keys())
         
+        # let agent interact according to probability
+        if random.uniform(0, 1) < self.model.prob_interaction:
+            self.interact()
+        
+        # move agent according to probability
+        if random.uniform(0, 1) < self.model.prob_move:
+            self.move_community()
+        
+        self.age()
+        self.update_pp()
+
 
     def modify_characteristic(self, characteristic):
         '''

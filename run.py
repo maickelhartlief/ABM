@@ -1,6 +1,6 @@
 # internal imports
-from model import Model
-from agents import Agent
+from party import Party_model
+from agents import Member
 
 # external imports
 import sys
@@ -10,14 +10,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
 from importlib import import_module
-
+from mesa import Agent, Model, space, time
 
 ## import parameter configuration from file (default: configs.normal)
 params = import_module('configs.' + ('normal' if len(sys.argv) < 2 else sys.argv[1]))
 
 
 ## create model
-model = Model(prob_stimulus = params.prob_stimulus, 
+model = Party_model(prob_stimulus = params.prob_stimulus, 
               prob_interaction = params.prob_interaction,   
               prob_move = params.prob_move,
               until_eligible = params.until_eligible,
@@ -36,7 +36,7 @@ elif params.char_distr == 'uniform': # uniform distribution within limits
 
 # intialize each agent
 for idx in range(params.n_agents):
-    model.add_agent(Agent(idx, 
+    model.add_agent(Member(idx, 
                           model,
                           # TODO: would be more natural to make this chance related to prob_move.
                           until_eligible = 0 if random.uniform(0, 1) < .8 else params.until_eligible, 
