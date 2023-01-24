@@ -32,7 +32,7 @@ class Party_model(Model):
                  characteristics_affected,
                  edges_per_step = 3,
                  n_agents = 100,
-                 m_barabasi = 5,
+                 m_barabasi = 1,
                  fermi_alpha = 4,
                  fermi_b = 1):
         '''
@@ -69,7 +69,7 @@ class Party_model(Model):
 
 
         self.datacollector = DataCollector(agent_reporters = {"PPS":"pps"})
-        self.graph = nx.barabasi_albert_graph(n=self.n_agents, m = 1)# m=self.m_barabasi)
+        self.graph = nx.barabasi_albert_graph(n=self.n_agents, m=self.m_barabasi)
 
 
     def add_agent(self, agent):

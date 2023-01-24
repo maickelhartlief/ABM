@@ -193,9 +193,13 @@ class Member(Agent):
         #     return
 
         # pick interaction partner
-        partner = random.choice(self.model.agents)
-        while partner == self:
+        if self.model.network == "default":
             partner = random.choice(self.model.agents)
+            while partner == self:
+                partner = random.choice(self.model.agents)
+        else:
+            partner = random.choice(self.social_ids())
+
 
         # TODO indexing doesn't work
         path_length = nx.shortest_path_length(self.model.graph, self.model.graph[self.unique_id], self.model.graph[partner.unique_id])
@@ -248,6 +252,103 @@ class Member(Agent):
             return
 
         self.until_eligible -= 1
+
+
+    def distance(self, partner):
+        """
+        description: calculate the distance between the self and the partner by Euclidean
+        distance between personality traits related to friendship and
+        social economic status.
+        inputs:
+            - partner: Agent to compare with
+        output:
+            - distance: float; bigger if individuals are less similar
+
+        """
+        friend_charact = np.array([self.social, self.autonomous, self.approaching, self.ses])
+        p_friend_charact = np.array([partner.social, partner.autonomous, partner.approaching, partner.ses])
+
+        return np.linalg.norm((friend_charact - p_friend_charact))
+
+
+        # taken from https://github.com/MbBrainz/ABM-project-group8/blob/main/polarization/core/model.py
+    @property
+    def socials_ids(self):
+        """
+        description: creates a list of ids that the agent is connected to in the
+        social network
+        """
+        return [social_id for social_id in self.model.graph[self.unique_id]]
+
+    @property
+    def unconnected_ids(self):
+        """
+        description: creates a list of ids that the agent is not connected to in the
+        social network
+        """
+        return [id for id in self.model.graph.nodes if (id not in self.socials_ids + [self.unique_id])]
+
+    def new_social(self):
+        """
+        Adds a new random connection from the agent with a probability determined by the Fermi-Dirac distribution.
+        choice of addition depends on similarity in SES, and characteristics social, approaching and autonomous
+        """
+        # determine how large the pool of potential candidates is, depending on
+        # how many unconnected nodes are left or how many nodes we want to max
+        # add per step
+        if len(self.unconnected_ids) < self.model.edges_per_step:
+            n_potentials = len(self.unconnected_ids)
+        else:
+            n_potentials = self.model.edges_per_step
+
+        # randomly select 'n_potentials' from people the agent is not connected to
+        pot_make_ids = np.random.choice(self.unconnected_ids, size=n_potentials, replace=False)
+
+        # get agents from model.schedule with the id's from the pot_make_ids
+        pot_makes = [social for social in self.model.schedule.agents if social.unique_id in pot_make_ids]
+
+        for potential in pot_makes:
+            self.consider_connection(potential, method="ADD")
+
+    def remove_social(self):
+        """
+        Removes a few random connections from the agent with a probability determined by the Fermi-Dirac distribution.
+        Choice of removal depends on similarity in on similarity in SES, and characteristics social, approaching and autonomous
+        """
+        # determine how large the pool of potential candidates is, depending on
+        # how many unconnected nodes are left or how many edges we want to max
+        # add per step
+        if len(self.socials_ids) < self.model.edges_per_step:
+            n_potentials = len(self.socials_ids)
+        else:
+            n_potentials = self.model.edges_per_step
+
+        # randomly select 'n_potentials' from the agent's network
+        pot_break_ids = np.random.choice(self.socials_ids, size=n_potentials, replace=False)
+
+        # get agents from model.schedule with the id's from the pot_break_ids
+        pot_breaks = [social for social in self.model.schedule.agents if social.unique_id in pot_break_ids]
+
+        for potential in pot_breaks:
+            self.consider_connection(potential, method="REMOVE")
+
+    def consider_connection(self, partner, method):
+        """
+        Calculate the (Fermi Dirac) probability of agent being connected to 'potential agent' and based on method add or remove the connection randomly
+        Args:
+            partner (Agent): the agent to consider
+            method (str): "ADD" or "REMOVE"
+        """
+        p_ij = 1 / ( 1 + np.exp(self.model.fermi_alpha * (self.distance(partner) - self.model.fermi_b)))
+
+        if method == "ADD":
+            if p_ij > random.random():
+                self.model.graph.add_edge(self.unique_id, partner.unique_id)
+                #print("connection added")
+
+        if method == "REMOVE":
+            if p_ij < random.random():
+                self.model.graph.remove_edge(self.unique_id, partner.unique_id)
 
 
     def update_pp(self):
@@ -317,100 +418,3 @@ class Member(Agent):
             self.pps = 12
         else:
             return
-
-    def distance(self, partner):
-        """
-        description: calculate the distance between the self and the partner by Euclidean
-        distance between personality traits related to friendship and
-        social economic status.
-        inputs:
-            - partner: Agent to compare with
-        output:
-            - distance: float; bigger if individuals are less similar
-
-        """
-        friend_charact = np.array([self.social, self.autonomous, self.approaching, self.ses])
-        p_friend_charact = np.array([partner.social, partner.autonomous, partner.approaching, partner.ses])
-
-        return np.linalg.norm((friend_charact - p_friend_charact))
-
-
-        # taken from https://github.com/MbBrainz/ABM-project-group8/blob/main/polarization/core/model.py
-    @property
-    def socials_ids(self):
-        """
-        description: creates a list of ids that the agent is connected to in the
-        social network
-        """
-        return [social_id for social_id in self.model.graph[self.unique_id]]
-
-    @property
-    def unconnected_ids(self):
-        """
-        description: creates a list of ids that the agent is not connected to in the
-        social network
-        """
-        return [id for id in self.model.graph.nodes if (id not in self.socials_ids + [self.unique_id])]
-
-    def new_social(self):
-        """Adds a new random connection from the agent with a probability determined by the Fermi-Dirac distribution.
-            Choice of addition depends on similarity in political opinion.
-            Args:
-                socials_ids (list): IDs of social connections of agent
-        """
-        # determine how large the pool of potential candidates is, depending on
-        # how many unconnected nodes are left or how many nodes we want to max
-        # add per step
-        if len(self.unconnected_ids) < self.model.edges_per_step:
-            n_potentials = len(self.unconnected_ids)
-        else:
-            n_potentials = self.model.edges_per_step
-
-        # randomly select 'n_potentials' from people the agent is not connected to
-        pot_make_ids = np.random.choice(self.unconnected_ids, size=n_potentials, replace=False)
-
-        # get agents from model.schedule with the id's from the pot_make_ids
-        pot_makes = [social for social in self.model.schedule.agents if social.unique_id in pot_make_ids]
-
-        for potential in pot_makes:
-            self.consider_connection(potential, method="ADD")
-
-    def remove_social(self):
-        """Removes a few random connections from the agent with a probability determined by the Fermi-Dirac distribution.
-            Choice of removal depends on similarity in political opinion.
-            Args:
-                socials_ids (list): IDs of social connections of agent
-        """
-        # determine how large the pool of potential candidates is, depending on
-        # how many unconnected nodes are left or how many edges we want to max
-        # add per step
-        if len(self.socials_ids) < self.model.edges_per_step:
-            n_potentials = len(self.socials_ids)
-        else:
-            n_potentials = self.model.edges_per_step
-
-        # randomly select 'n_potentials' from the agent's network
-        pot_break_ids = np.random.choice(self.socials_ids, size=n_potentials, replace=False)
-
-        # get agents from model.schedule with the id's from the pot_break_ids
-        pot_breaks = [social for social in self.model.schedule.agents if social.unique_id in pot_break_ids]
-
-        for potential in pot_breaks:
-            self.consider_connection(potential, method="REMOVE")
-
-    def consider_connection(self, partner, method):
-        """Calculate the (Fermi Dirac) probability of agent being connected to 'potential agent' and based on method add or remove the connection randomly
-        Args:
-            partner (Agent): the agent to consider
-            method (str): "ADD" or "REMOVE"
-        """
-        p_ij = 1 / ( 1 + np.exp(self.model.fermi_alpha * (self.distance(partner) - self.model.fermi_b)))
-
-        if method == "ADD":
-            if p_ij > random.random():
-                self.model.graph.add_edge(self.unique_id, partner.unique_id)
-                #print("connection added")
-
-        if method == "REMOVE":
-            if p_ij < random.random():
-                self.model.graph.remove_edge(self.unique_id, partner.unique_id)
