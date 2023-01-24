@@ -20,6 +20,7 @@ from utils import set_valid
 import numpy as np
 import random
 from mesa import Agent, Model, space, time,  DataCollector
+import networkx as nx
 
 class Member(Agent):
     '''
