@@ -1,3 +1,5 @@
+# OUTDATED! USE party.py
+
 import utils
 
 import numpy as np

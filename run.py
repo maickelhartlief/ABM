@@ -64,20 +64,20 @@ plt.show()
 # for iteration in range(params.n_iterations):
 #     model.step()
 
-
-for iteration in range(params.n_iterations):
-    model.step()
-    smith = model.agents[0]
-    print(f'active = {round(smith.active, 1)}\n'
-          f'overt  = {round(smith.overt, 1)}\n'
-          f'autonomous  = {round(smith.autonomous, 1)}\n'
-          f'approaching  = {round(smith.approaching, 1)}\n'
-          f'continuous  = {round(smith.continuous, 1)}\n'
-          f'outtaking  = {round(smith.outtaking, 1)}\n'
-          f'expressive  = {round(smith.expressive, 1)}\n'
-          f'social  = {round(smith.social, 1)}\n'
-          f'ses  = {smith.ses}\n')
-    print(f'pp = {smith.pps}')
+# 
+# for iteration in range(params.n_iterations):
+#     model.step()
+#     smith = model.agents[0]
+#     print(f'active = {round(smith.active, 1)}\n'
+#           f'overt  = {round(smith.overt, 1)}\n'
+#           f'autonomous  = {round(smith.autonomous, 1)}\n'
+#           f'approaching  = {round(smith.approaching, 1)}\n'
+#           f'continuous  = {round(smith.continuous, 1)}\n'
+#           f'outtaking  = {round(smith.outtaking, 1)}\n'
+#           f'expressive  = {round(smith.expressive, 1)}\n'
+#           f'social  = {round(smith.social, 1)}\n'
+#           f'ses  = {smith.ses}\n')
+#     print(f'pp = {smith.pps}')
 
 df = model.datacollector.get_agent_vars_dataframe()
 
