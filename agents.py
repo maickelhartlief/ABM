@@ -190,9 +190,13 @@ class Member(Agent):
             return
 
         # pick interaction partner
-        partner = random.choice(self.model.agents)
-        while partner == self:
+        if self.model.network == "default":
             partner = random.choice(self.model.agents)
+            while partner == self:
+                partner = random.choice(self.model.agents)
+        else:
+            partner = random.choice(self.social_ids())
+
 
 
         # check whether partner's personality would accept interaction
