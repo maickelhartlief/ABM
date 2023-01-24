@@ -3,41 +3,42 @@ import utils
 import numpy as np
 import random
 from mesa import Agent, Model, space, time,  DataCollector
+import networkx as nx
 
-class Party_agent(Agent):
-    def __init__(self,
-                 unique_id,
-                 model,
-                 prob_stimulus = 0,
-                 prob_interaction = 0,
-                 prob_move = 0,
-                 until_eligible = 0,
-                 characteristics_affected = {'active' : .5,
-                                             'overt' : .5,
-                                             'continuous' : .5,
-                                             'expressive' : .5,
-                                             'outtaking' : .5}):
-        self.unique_id = unique_id
-        self.model = model
-        self.inner_model = Party_model(self,
-                                       prob_stimulus,
-                                       prob_interaction,
-                                       prob_move,
-                                       until_eligible,
-                                       characteristics_affected)
-        self.fitness = self.advance()
-
-
-    def step(self):
-        self.inner_model.step()
-
-
-    def advance(self):
-        ## TODO: figure out what the fitness should be
-        # total political participation
-        self.fitness = np.sum(self.inner_model.get_pps())
-        # total number of voters
-        # self.fitness = self.inner_model.get_voters()
+# class Party_agent(Agent):
+#     def __init__(self,
+#                  unique_id,
+#                  model,
+#                  prob_stimulus = 0,
+#                  prob_interaction = 0,
+#                  prob_move = 0,
+#                  until_eligible = 0,
+#                  characteristics_affected = {'active' : .5,
+#                                              'overt' : .5,
+#                                              'continuous' : .5,
+#                                              'expressive' : .5,
+#                                              'outtaking' : .5}):
+#         self.unique_id = unique_id
+#         self.model = model
+#         self.inner_model = Party_model(self,
+#                                        prob_stimulus,
+#                                        prob_interaction,
+#                                        prob_move,
+#                                        until_eligible,
+#                                        characteristics_affected)
+#         self.fitness = self.advance()
+#
+#
+#     def step(self):
+#         self.inner_model.step()
+#
+#
+#     def advance(self):
+#         ## TODO: figure out what the fitness should be
+#         # total political participation
+#         self.fitness = np.sum(self.inner_model.get_pps())
+#         # total number of voters
+#         # self.fitness = self.inner_model.get_voters()
 
 
 class Party_model(Model):
@@ -62,7 +63,11 @@ class Party_model(Model):
                  prob_interaction,
                  prob_move,
                  until_eligible,
-                 characteristics_affected):
+                 characteristics_affected,
+                 n_agents = 100,
+                 m_barabasi = 5,
+                 fermi_alpha = 4,
+                 fermi_b = 1):
         '''
         description: initializes new Model object
         inputs:
@@ -78,13 +83,19 @@ class Party_model(Model):
         self.prob_move = utils.set_valid(prob_move, upper = 1, verbose = True, name = 'r')
         self.until_eligible = until_eligible
         self.characteristics_affected = characteristics_affected
+        self.n_agents = n_agents
+        self.m_barabasi = m_barabasi
+        self.fermi_alpha = fermi_alpha
+        self.fermi_b = fermi_b
 
         self.schedule = time.RandomActivation(self)
         self.time = 0
         self.agents = np.array([])
         self.stimulus = False
 
+
         self.datacollector = DataCollector(agent_reporters = {"PPS":"pps"})
+        self.graph = nx.barabasi_albert_graph(n=self.n_agents, m = 1)# m=self.m_barabasi)
 
 
     def add_agent(self, agent):
