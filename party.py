@@ -3,42 +3,6 @@ import utils
 import numpy as np
 import random
 from mesa import Agent, Model, space, time,  DataCollector
-import networkx as nx
-
-# class Party_agent(Agent):
-#     def __init__(self,
-#                  unique_id,
-#                  model,
-#                  prob_stimulus = 0,
-#                  prob_interaction = 0,
-#                  prob_move = 0,
-#                  until_eligible = 0,
-#                  characteristics_affected = {'active' : .5,
-#                                              'overt' : .5,
-#                                              'continuous' : .5,
-#                                              'expressive' : .5,
-#                                              'outtaking' : .5}):
-#         self.unique_id = unique_id
-#         self.model = model
-#         self.inner_model = Party_model(self,
-#                                        prob_stimulus,
-#                                        prob_interaction,
-#                                        prob_move,
-#                                        until_eligible,
-#                                        characteristics_affected)
-#         self.fitness = self.advance()
-#
-#
-#     def step(self):
-#         self.inner_model.step()
-#
-#
-#     def advance(self):
-#         ## TODO: figure out what the fitness should be
-#         # total political participation
-#         self.fitness = np.sum(self.inner_model.get_pps())
-#         # total number of voters
-#         # self.fitness = self.inner_model.get_voters()
 
 
 class Party_model(Model):
@@ -77,7 +41,6 @@ class Party_model(Model):
             - until_eligible = steps needed for new agents to be allowed to vote,
             - characteristics_affected = dictionary of effect of stimulus on agent
         '''
-        #self.outer_agent = outer_agent
         self.prob_stimulus = utils.set_valid(prob_stimulus, upper = 1, verbose = True, name = 'p')
         self.prob_interaction = utils.set_valid(prob_interaction, upper = 1, verbose = True, name = 'q')
         self.prob_move = utils.set_valid(prob_move, upper = 1, verbose = True, name = 'r')
@@ -119,15 +82,6 @@ class Party_model(Model):
 
         self.datacollector.collect(self)
         self.schedule.step()
-
-
-    # def get_pps(self):
-    #     '''
-    #     description: returns data of all agents' political participation over time
-    #     output:
-    #          - ndarray of shape (n_agents, time) of the political participation of each agent at each timestep
-    #     '''
-    #     return np.array([agent.pps for agent in self.agents])
 
 
     def get_voters(self):

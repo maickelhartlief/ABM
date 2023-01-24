@@ -52,7 +52,7 @@ to setup ; setting up the simulation
     set agentnum 100     ; number of agents to create: size of community (*/*)
     set selig 3          ; 3% not eligible to start with
     set sduty 20         ; 20% feel a duty to vote to start with
-    set-histogram-num-bars 13   ; setup histogram of levels
+    set-histogram-num-bars 1   ; setup histogram of levels
     action               ; initial setting of political environment, can be changed
                          ; using the Action button during the simulation to study the
                          ; effects of shocks etc.
@@ -216,10 +216,10 @@ to updating         ; update level of political involvement for all agents
 
     ; start at bottom and see if criteria still met
     ; (*/*) assumed that move up if on average > 3 (i.e. above average on criteria)
-    set level 0
+    set level 9
     ; ***** currently there is no stochastic element to most rules, how big (magnitude) is it? *****
     if eligible = 1 [                     ; not eligible, not involved
-        if random 10 = 0 [ set level 1 ]  ; exposed to stimuli, threshold (*/*)
+        if random 100 = 0 [ set level 1 ]  ; exposed to stimuli, threshold (*/*)
         if duty = 1 [ set level 2 ]       ; will always vote if feel a duty to do so.
         ; level 2: voting, using characteristics;
         ifelse done = false and active + approach - (5 / 3) * SES > 3 [ set level 2 ]

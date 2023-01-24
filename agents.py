@@ -12,6 +12,7 @@ TODO:
 - implement more of the presets
 - figure out why results don't match base model
 - implement more analysis
+- fix .gitignore...
 '''
 
 from utils import set_valid
@@ -88,7 +89,6 @@ class Member(Agent):
         self.expressive = set_valid(expressive, verbose = True, name = 'expressive')
         self.social = set_valid(social, verbose = True, name = 'social')
         self.ses = set_valid(ses, lower = 1, upper = 3, verbose = True, name = 'ses')
-        #self.pps = np.array([])
         self.pps = None
         self.char_modifiers = char_modifiers
 
@@ -252,7 +252,7 @@ class Member(Agent):
         self.pps =  0 if random.uniform(0, 1) > .1 else 1
 
         # agents that aren't eligible do not have to update their pps
-        if self.until_eligible:
+        if self.until_eligible: # != 0
             return
 
         # NOTE: probably a mistake in base model where vote duty alone does not envoke checks for higher levels.
