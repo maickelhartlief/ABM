@@ -96,10 +96,8 @@ class Member(Agent):
         # initial settings for contacts and time spent in location
         self.move_community()
 
-        # initialize network
-        for node in range(self.model.m_barabasi):
-            self.new_social()
-
+        # initialize social connections based on similarity
+        self.new_social()
 
         # initialize ppz
         self.update_pp()
@@ -113,6 +111,10 @@ class Member(Agent):
         # let agent interact according to probability
         if random.uniform(0, 1) < self.model.prob_interaction:
             self.interact()
+
+        if random.uniform(0, 1) < self.model.prob_friend:
+            self.new_social()
+            self.remove_social()
 
         # move agent according to probability
         if random.uniform(0, 1) < self.model.prob_move:
@@ -184,45 +186,47 @@ class Member(Agent):
         description: attempts to interact with another agent, changing both their characteristics
         '''
 
-        # check whether personality would lead to interaction
-        if self.pps < 3:
-            return
-        if self.social + (self.pps / 3 + 1) + self.active + random.uniform(0, 2.5) <= 10:
-            return
+        # # check whether personality would lead to interaction
+        # if self.pps < 3:
+        #     return
+        # if self.social + (self.pps / 3 + 1) + self.active + random.uniform(0, 2.5) <= 10:
+        #     return
 
         # pick interaction partner
         partner = random.choice(self.model.agents)
         while partner == self:
             partner = random.choice(self.model.agents)
 
+        # TODO indexing doesn't work
+        path_length = nx.shortest_path_length(self.model.graph, self.model.graph[self.unique_id], self.model.graph[partner.unique_id])
 
         # check whether partner's personality would accept interaction
-        if partner.pps == 0:
-            return
-        if partner.social + partner.active + partner.approaching + random.uniform(0, 2.5) <= 10:
-            return
+        # if partner.pps == 0:
+        #     return
+        # if partner.social + partner.active + partner.approaching + random.uniform(0, 2.5) <= 10:
+        #     return
+        if path_length < 3:
+            ## interact
+            mod = self.interaction_modifier()
+            p_mod = partner.interaction_modifier()
 
-        ## interact
-        mod = self.interaction_modifier()
-        p_mod = partner.interaction_modifier()
+            if self.approaching > partner.approaching:
+                partner.approaching += p_mod
+            else:
+                self.approaching += mod
 
-        if self.approaching > partner.approaching:
-            partner.approaching += p_mod
-        else:
-            self.approaching += mod
+            pps_diff = self.pps - partner.pps
+            if pps_diff > 0:
+                partner.active += p_mod
+                # TODO seems like this should be mod instead of p_mod, but this is what the base model does
+                self.overt += mod
+            elif pps_diff < 0:
+                self.active += mod
+                # TODO seems like this should be p_mod instead of mod, but this is what the base model does
+                partner.overt += p_mod
 
-        pps_diff = self.pps - partner.pps
-        if pps_diff > 0:
-            partner.active += p_mod
-            # TODO seems like this should be mod instead of p_mod, but this is what the base model does
-            self.overt += mod
-        elif pps_diff < 0:
-            self.active += mod
-            # TODO seems like this should be p_mod instead of mod, but this is what the base model does
-            partner.overt += p_mod
-
-        self.contacts += 1
-        partner.contacts += 1
+            self.contacts += 1
+            partner.contacts += 1
 
 
     def move_community(self):
@@ -343,7 +347,7 @@ class Member(Agent):
     @property
     def unconnected_ids(self):
         """
-        description: creates a list of ids that the agent is connected to in the
+        description: creates a list of ids that the agent is not connected to in the
         social network
         """
         return [id for id in self.model.graph.nodes if (id not in self.socials_ids + [self.unique_id])]
@@ -354,11 +358,13 @@ class Member(Agent):
             Args:
                 socials_ids (list): IDs of social connections of agent
         """
-        # determine whether to form a new connection
-        if len(self.unconnected_ids) < self.model.m_barabasi:
+        # determine how large the pool of potential candidates is, depending on
+        # how many unconnected nodes are left or how many nodes we want to max
+        # add per step
+        if len(self.unconnected_ids) < self.model.edges_per_step:
             n_potentials = len(self.unconnected_ids)
         else:
-            n_potentials = self.model.m_barabasi
+            n_potentials = self.model.edges_per_step
 
         # randomly select 'n_potentials' from people the agent is not connected to
         pot_make_ids = np.random.choice(self.unconnected_ids, size=n_potentials, replace=False)
@@ -375,10 +381,13 @@ class Member(Agent):
             Args:
                 socials_ids (list): IDs of social connections of agent
         """
-        if len(self.socials_ids) < self.model.m_barabasi:
+        # determine how large the pool of potential candidates is, depending on
+        # how many unconnected nodes are left or how many edges we want to max
+        # add per step
+        if len(self.socials_ids) < self.model.edges_per_step:
             n_potentials = len(self.socials_ids)
         else:
-            n_potentials = self.model.m_barabasi
+            n_potentials = self.model.edges_per_step
 
         # randomly select 'n_potentials' from the agent's network
         pot_break_ids = np.random.choice(self.socials_ids, size=n_potentials, replace=False)
@@ -400,7 +409,7 @@ class Member(Agent):
         if method == "ADD":
             if p_ij > random.random():
                 self.model.graph.add_edge(self.unique_id, partner.unique_id)
-                print("connection added")
+                #print("connection added")
 
         if method == "REMOVE":
             if p_ij < random.random():

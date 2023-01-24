@@ -21,10 +21,14 @@ params = import_module('configs.' + ('normal' if len(sys.argv) < 2 else sys.argv
 model = Party_model(prob_stimulus = params.prob_stimulus,
               prob_interaction = params.prob_interaction,
               prob_move = params.prob_move,
+              prob_friend = params.prob_friend,
               until_eligible = params.until_eligible,
               characteristics_affected = params.characteristics_affected,
+              edges_per_step = params.edges_per_step,
               n_agents = params.n_agents,
-              m_barabasi = params.node_connections,
+              m_barabasi = params.m_barabasi,
+              fermi_alpha = params.fermi_alpha,
+              fermi_b = params.fermi_b
               )
 
 
@@ -58,13 +62,13 @@ for idx in range(params.n_agents):
 
 ## run simulation
 
-model.step()
+
+for iteration in range(params.n_iterations):
+    model.step()
+
 nx.draw(model.graph)
 plt.show()
-# for iteration in range(params.n_iterations):
-#     model.step()
-
-# 
+#
 # for iteration in range(params.n_iterations):
 #     model.step()
 #     smith = model.agents[0]
