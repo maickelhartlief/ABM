@@ -196,46 +196,56 @@ class Member(Agent):
         if self.social + (self.pps / 3 + 1) + self.active + random.uniform(0, 2.5) <= 10:
             return
 
-        # pick interaction partner
-        if len(self.socials_ids):
-            partner_id = random.choice(self.socials_ids)
-            partner = [agent for agent in self.model.agents if agent.unique_id == partner_id][0]
+        # pick interaction partner from friends
+        # if len(self.socials_ids):
+        #     partner_id = random.choice(self.socials_ids)
+        #     partner = [agent for agent in self.model.agents if agent.unique_id == partner_id][0]
 
+        partner = random.choice(self.model.agents)
+        while partner == self:
+            partner = random.choice(self.model.agents)
 
         # TODO indexing doesn't work
         # @Do: If you want to do this just use partner.unique_id instead of self.model.graph[partner.unique_id]
-        # path_length = nx.shortest_path_length(self.model.graph, self.unique_id, partner.unique_id)
+
+        if nx.has_path(self.model.graph, self.unique_id, partner.unique_id):
+            path_length = nx.shortest_path_length(self.model.graph, self.unique_id, partner.unique_id)
+        else:
+            return
+
+        if path_length >= 2:
+            return
 
         # check whether partner's personality would accept interaction
-            # NOTE: this states that only people that are already politically active actually interact
-            #       with others about politics. This seems off, and there are barely interactions in
-            #       the model. changing this makes the percentage of voters much more accurate.
-            if partner.pps == 0 and random.randint(0, 1):
-                return
-            if partner.social + partner.active + partner.approaching + random.uniform(0, 2.5) <= 10:
-                return
+        # NOTE: this states that only people that are already politically active actually interact
+        #       with others about politics. This seems off, and there are barely interactions in
+        #       the model. changing this makes the percentage of voters much more accurate.
+        if partner.pps == 0 and random.randint(0, 1):
+            return
+        if partner.social + partner.active + partner.approaching + random.uniform(0, 2.5) <= 10:
+            return
 
-            ## interact
-            mod = self.interaction_modifier()
-            p_mod = partner.interaction_modifier()
+        ## interact
+        mod = self.interaction_modifier()
+        p_mod = partner.interaction_modifier()
 
-            if self.approaching > partner.approaching:
-                partner.approaching = set_valid(partner.approaching + p_mod)
-            else:
-                self.approaching = set_valid(self.approaching + mod)
+        if self.approaching > partner.approaching:
+            partner.approaching = set_valid(partner.approaching + p_mod)
+        else:
+            self.approaching = set_valid(self.approaching + mod)
 
-            pps_diff = self.pps - partner.pps
-            if pps_diff > 0:
-                partner.active = set_valid(partner.active + p_mod)
-                # TODO seems like this should be mod instead of p_mod, but this is what the base model does
-                self.overt = set_valid(self.overt + mod)
-            elif pps_diff < 0:
-                self.active = set_valid(self.active + mod)
-                # TODO seems like this should be p_mod instead of mod, but this is what the base model does
-                partner.overt = set_valid(partner.overt + p_mod)
+        pps_diff = self.pps - partner.pps
+        if pps_diff > 0:
+            partner.active = set_valid(partner.active + p_mod)
+            # TODO seems like this should be mod instead of p_mod, but this is what the base model does
+            self.overt = set_valid(self.overt + mod)
+        elif pps_diff < 0:
+            self.active = set_valid(self.active + mod)
+            # TODO seems like this should be p_mod instead of mod, but this is what the base model does
+            partner.overt = set_valid(partner.overt + p_mod)
 
-            self.contacts += 1
-            partner.contacts += 1
+        self.contacts += 1
+        partner.contacts += 1
 
 
     def move_community(self):
