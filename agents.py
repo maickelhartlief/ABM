@@ -164,12 +164,13 @@ class Member(Agent):
         '''
 
         # set modification to political participation
-        mod = random.randint(0, 1) / (self.autonomous + self.continuous)
+        # NOTE: stochasticity here was moved a level up to rejecting / accepting interaction
+        mod = 1 / (self.autonomous + self.continuous)
 
         # modify less when interaction is cynical
         if random.randint(0, int(19 * self.ses)) == 0:
             mod /= 10
-
+            
         return mod
 
 
@@ -179,7 +180,10 @@ class Member(Agent):
         '''
 
         # check whether personality would lead to interaction
-        if self.pps < 3:
+        # NOTE: this states that only people that are already politically active actually interact 
+        #       with others about politics. This seems off, and there are barely interactions in 
+        #       the model. changing this makes the percentage of voters much more accurate.
+        if self.pps < 3 and random.randint(0, 1):
             return
         if self.social + (self.pps / 3 + 1) + self.active + random.uniform(0, 2.5) <= 10:
             return
@@ -191,7 +195,10 @@ class Member(Agent):
 
 
         # check whether partner's personality would accept interaction
-        if partner.pps == 0:
+        # NOTE: this states that only people that are already politically active actually interact 
+        #       with others about politics. This seems off, and there are barely interactions in 
+        #       the model. changing this makes the percentage of voters much more accurate.
+        if partner.pps == 0 and random.randint(0, 1):
             return
         if partner.social + partner.active + partner.approaching + random.uniform(0, 2.5) <= 10:
             return
@@ -201,19 +208,19 @@ class Member(Agent):
         p_mod = partner.interaction_modifier()
 
         if self.approaching > partner.approaching:
-            partner.approaching += p_mod
+            partner.approaching = set_valid(partner.approaching + p_mod)
         else:
-            self.approaching += mod
+            self.approaching = set_valid(self.approaching + mod)
 
         pps_diff = self.pps - partner.pps
         if pps_diff > 0:
-            partner.active += p_mod
+            partner.active = set_valid(partner.active + p_mod)
             # TODO seems like this should be mod instead of p_mod, but this is what the base model does
-            self.overt += mod
+            self.overt = set_valid(self.overt + mod)
         elif pps_diff < 0:
-            self.active += mod
+            self.active = set_valid(self.active + mod)
             # TODO seems like this should be p_mod instead of mod, but this is what the base model does
-            partner.overt += p_mod
+            partner.overt = set_valid(partner.overt + p_mod)
 
         self.contacts += 1
         partner.contacts += 1
