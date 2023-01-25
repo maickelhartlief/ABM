@@ -25,3 +25,7 @@ def set_valid(param, lower = 0, upper = 5, verbose = False, name = ''):
         print(f'invalid value for {name}: {param}. set to {out}')
     
     return out
+
+# normalized the distance to be inbetween .5 and 2, so that the max and min modifier is doubled or halfed.
+def distance_normalizer(distance):
+    return distance / math.sqrt(5**2 * 3 + 2**2) * 1.5 + .5

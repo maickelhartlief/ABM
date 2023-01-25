@@ -5,14 +5,7 @@ TODO:
   which now means that a person moving always takes the exact
   same characteristics as the previous owner of that house.
   this seems odd.
-- potentially expand to multiple communities?
-   - support with theory about how communities interact and change
-   - what does a community represent? party? demographic? location? social network? (probably party)
-   - community class with community-wide variables?
-- implement more of the presets
-- figure out why results don't match base model
 - implement more analysis
-- fix .gitignore...
 '''
 
 from utils import set_valid
