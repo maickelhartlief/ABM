@@ -14,7 +14,7 @@ TODO:
 - implement more analysis
 '''
 
-from utils import set_valid
+from utils import set_valid, distance_normalizer
 
 import numpy as np
 import random
@@ -31,13 +31,13 @@ class Member(Agent):
         - model: model object agent is a part of
         - until_eligible: optional, number of steps until an agent can vote
         - vote_duty: optional, whether agent must vote
-        - active: optional, one of the agent's charactaristics
-        - overt: optional, one of the agent's charactaristics
-        - autonomous: optional, one of the agent's charactaristics
-        - continuous: optional, one of the agent's charactaristics
-        - outtaking: optional, one of the agent's charactaristics
-        - expressive: optional, one of the agent's charactaristics
-        - social: optional, one of the agent's charactaristics
+        - active: optional, one of the agent's characteristics
+        - overt: optional, one of the agent's characteristics
+        - autonomous: optional, one of the agent's characteristics
+        - continuous: optional, one of the agent's characteristics
+        - outtaking: optional, one of the agent's characteristics
+        - expressive: optional, one of the agent's characteristics
+        - social: optional, one of the agent's characteristics
         - ses: optional, socio-economic status
         - char_modifiers: optional, dictionary with tendencies for characteristics
           to change according to stimulus (>.5 = up, <.5 = down)
@@ -163,7 +163,7 @@ class Member(Agent):
             self.outtaking = set_valid(self.modify_characteristic('outtaking') + self.continuous)
 
 
-    def interaction_modifier(self):
+    def interaction_modifier(self, partner):
         '''
         description: calculates how characteristics should be modified based on an interaction
                      with another agent
@@ -178,6 +178,9 @@ class Member(Agent):
         # modify less when interaction is cynical
         if random.randint(0, int(19 * self.ses)) == 0:
             mod /= 10
+
+        # difference between participants hierin meenemen
+        mod /= distance_normalizer(self.distance(partner))
 
         return mod
 
@@ -208,6 +211,7 @@ class Member(Agent):
         # TODO indexing doesn't work
         # @Do: If you want to do this just use partner.unique_id instead of self.model.graph[partner.unique_id]
 
+        # path length
         if nx.has_path(self.model.graph, self.unique_id, partner.unique_id):
             path_length = nx.shortest_path_length(self.model.graph, self.unique_id, partner.unique_id)
         else:
@@ -226,8 +230,8 @@ class Member(Agent):
             return
 
         ## interact
-        mod = self.interaction_modifier()
-        p_mod = partner.interaction_modifier()
+        mod = self.interaction_modifier(partner)
+        p_mod = partner.interaction_modifier(self)
 
         if self.approaching > partner.approaching:
             partner.approaching = set_valid(partner.approaching + p_mod)
@@ -253,7 +257,7 @@ class Member(Agent):
         description: replaces the agent with a new identical agent, simulating the
                      agent moving to a different community and another taking its place
         '''
-        self.time_in_community = 0
+        self.time_in_community = 1
         self.contacts = 0
         self.until_eligible = self.model.until_eligible
 
