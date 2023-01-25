@@ -112,6 +112,7 @@ class Member(Agent):
         if random.uniform(0, 1) < self.model.prob_interaction:
             self.interact()
 
+        # Let agent make new connection and remove old according to probability
         if random.uniform(0, 1) < self.model.prob_friend:
             self.new_social()
             self.remove_social()
@@ -187,29 +188,26 @@ class Member(Agent):
         '''
 
         # # check whether personality would lead to interaction
-        # if self.pps < 3:
-        #     return
-        # if self.social + (self.pps / 3 + 1) + self.active + random.uniform(0, 2.5) <= 10:
-        #     return
+        if self.pps < 3:
+            return
+        if self.social + (self.pps / 3 + 1) + self.active + random.uniform(0, 2.5) <= 10:
+            return
 
         # pick interaction partner
-        if self.model.network == "default":
-            partner = random.choice(self.model.agents)
-            while partner == self:
-                partner = random.choice(self.model.agents)
-        else:
-            partner = random.choice(self.social_ids())
+        partner_id = random.choice(self.socials_ids)
+        partner = [agent for agent in self.model.agents if agent.unique_id == partner_id][0]
 
 
         # TODO indexing doesn't work
-        path_length = nx.shortest_path_length(self.model.graph, self.model.graph[self.unique_id], self.model.graph[partner.unique_id])
+        # @Do: If you want to do this just use partner.unique_id instead of self.model.graph[partner.unique_id]
+        # path_length = nx.shortest_path_length(self.model.graph, self.unique_id, partner.unique_id)
 
         # check whether partner's personality would accept interaction
-        # if partner.pps == 0:
-        #     return
-        # if partner.social + partner.active + partner.approaching + random.uniform(0, 2.5) <= 10:
-        #     return
-        if path_length < 3:
+        if partner.pps == 0:
+             return
+        if partner.social + partner.active + partner.approaching + random.uniform(0, 2.5) <= 10:
+             return
+        else:
             ## interact
             mod = self.interaction_modifier()
             p_mod = partner.interaction_modifier()

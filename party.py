@@ -30,9 +30,10 @@ class Party_model(Model):
                  prob_friend,
                  until_eligible,
                  characteristics_affected,
-                 edges_per_step = 3,
+                 edges_per_step = 1,
                  n_agents = 100,
-                 m_barabasi = 1,
+                 network = 'default', #Can be default, randomn of similarity
+                 m_barabasi = 5,
                  fermi_alpha = 4,
                  fermi_b = 1):
         '''
@@ -41,14 +42,8 @@ class Party_model(Model):
             - prob_stimulus: probability that a stimulus happens to all agents each step
             - prob_interaction = probability that an agent interacts each step,
             - prob_move = probability that an agent moves community,
-            - prob_friend = probability that an agent gains new connections and loses some
             - until_eligible = steps needed for new agents to be allowed to vote,
             - characteristics_affected = dictionary of effect of stimulus on agent
-            - edges_per_step = how many edges in a network can be made on broken in a step
-            - n_agents = number of agents in the model, needed for initialization of network
-            - m_barabasi = number of node edges
-            - fermi_alpha = parameter for the Fermi-Dirac distribution; level of homophily
-            - fermi_b = parameter for the Fermi-Dirac distribution; characteristic distance
         '''
         self.prob_stimulus = utils.set_valid(prob_stimulus, upper = 1, verbose = True, name = 'p')
         self.prob_interaction = utils.set_valid(prob_interaction, upper = 1, verbose = True, name = 'q')
@@ -56,12 +51,14 @@ class Party_model(Model):
         self.prob_friend = prob_friend
         self.until_eligible = until_eligible
         self.characteristics_affected = characteristics_affected
-        self.n_agents = n_agents
         self.edges_per_step = edges_per_step
+        self.n_agents = n_agents
+
+        self.network = network
         self.m_barabasi = m_barabasi
         self.fermi_alpha = fermi_alpha
         self.fermi_b = fermi_b
-
+    
         self.schedule = time.RandomActivation(self)
         self.time = 0
         self.agents = np.array([])
@@ -69,7 +66,11 @@ class Party_model(Model):
 
 
         self.datacollector = DataCollector(agent_reporters = {"PPS":"pps"})
-        self.graph = nx.barabasi_albert_graph(n=self.n_agents, m=self.m_barabasi)
+        
+        if self.network == "default":
+            self.graph = nx.complete_graph(n=self.n_agents)
+        else:
+            self.graph = nx.barabasi_albert_graph(n=self.n_agents, m=self.m_barabasi)
 
 
     def add_agent(self, agent):

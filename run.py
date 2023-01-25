@@ -26,6 +26,7 @@ model = Party_model(prob_stimulus = params.prob_stimulus,
               characteristics_affected = params.characteristics_affected,
               edges_per_step = params.edges_per_step,
               n_agents = params.n_agents,
+              network = 'default',
               m_barabasi = params.m_barabasi,
               fermi_alpha = params.fermi_alpha,
               fermi_b = params.fermi_b
