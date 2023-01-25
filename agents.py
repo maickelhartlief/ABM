@@ -12,7 +12,6 @@ TODO:
 - implement more of the presets
 - figure out why results don't match base model
 - implement more analysis
-- fix .gitignore...
 '''
 
 from utils import set_valid
