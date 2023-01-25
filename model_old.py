@@ -1,14 +1,13 @@
+# OUTDATED! USE party.py
+
 import utils
 
 import numpy as np
 import random
-from mesa import Agent, Model, space, time,  DataCollector
-import networkx as nx
 
-
-class Party_model(Model):
+class Model(object):
     '''
-    description: a Party object holds the environment parameters and manages all the agents.
+    description: a Model object holds the environment parameters and manages all the agents.
     inputs:
         - prob_stimulus: optional, probability that a stimulus happens to all agents each step
         - prob_interaction = optional, probability that an agent interacts each step,
@@ -23,19 +22,20 @@ class Party_model(Model):
     '''
 
     def __init__(self,
-                 #outer_agent,
-                 prob_stimulus,
-                 prob_interaction,
-                 prob_move,
-                 prob_friend,
-                 until_eligible,
-                 characteristics_affected,
-                 edges_per_step = 1,
+                 prob_stimulus = 0,
+                 prob_interaction = 0,
+                 prob_move = 0,
+                 until_eligible = 0,
                  n_agents = 100,
-                 network = 'default', #Can be default, randomn of similarity
                  m_barabasi = 5,
                  fermi_alpha = 4,
-                 fermi_b = 1):
+                 fermi_b = 1,
+                 #connections_per_step = 5
+                 characteristics_affected = {'active' : .5,
+                                             'overt' : .5,
+                                             'continuous' : .5,
+                                             'expressive' : .5,
+                                             'outtaking' : .5}):
         '''
         description: initializes new Model object
         inputs:
@@ -48,29 +48,17 @@ class Party_model(Model):
         self.prob_stimulus = utils.set_valid(prob_stimulus, upper = 1, verbose = True, name = 'p')
         self.prob_interaction = utils.set_valid(prob_interaction, upper = 1, verbose = True, name = 'q')
         self.prob_move = utils.set_valid(prob_move, upper = 1, verbose = True, name = 'r')
-        self.prob_friend = prob_friend
         self.until_eligible = until_eligible
         self.characteristics_affected = characteristics_affected
-        self.edges_per_step = edges_per_step
         self.n_agents = n_agents
-
-        self.network = network
         self.m_barabasi = m_barabasi
         self.fermi_alpha = fermi_alpha
         self.fermi_b = fermi_b
-    
-        self.schedule = time.RandomActivation(self)
+        #self.connections_per_step = connections_per_step
+
         self.time = 0
         self.agents = np.array([])
-        self.stimulus = False
-
-
-        self.datacollector = DataCollector(agent_reporters = {"PPS":"pps"})
-        
-        if self.network == "default":
-            self.graph = nx.complete_graph(n=self.n_agents)
-        else:
-            self.graph = nx.barabasi_albert_graph(n=self.n_agents, m=self.m_barabasi)
+        self.graph = nx.barabasi_albert_graph(n=self.n_agents, m=self.m_barabasi)
 
 
     def add_agent(self, agent):
@@ -80,21 +68,35 @@ class Party_model(Model):
             - agent object to add to the model
         '''
         self.agents = np.append(self.agents, agent)
-        self.schedule.add(agent)
 
 
     def step(self):
         '''
         description: updates environment and takes a step for each agent
         '''
-        self.time += 1 # TODO: might already be tracked in scheduler
+        self.time += 1
 
         # check whether stimulus happens for all agents
-        self.stimulus = random.uniform(0, 1) < self.prob_stimulus
+        stimulus = random.uniform(0, 1) < self.prob_stimulus
 
-        self.datacollector.collect(self)
-        self.schedule.step()
+        for agent in self.agents:
+            # perform stimulus if applicable
+            if stimulus:
+                agent.stimulus(self.characteristics_affected.keys())
+            # let agent interact according to probability
+            if random.uniform(0, 1) < self.prob_interaction:
+                agent.interact()
+            # move agent according to probability
+            if random.uniform(0, 1) < self.prob_move:
+                agent.move_community()
+            agent.age()
+            agent.update_pp()
 
 
-    def get_voters(self):
-        return len([1 for agent in self.agents if agent.pps >= 2])
+    # def get_pps(self):
+    #     '''
+    #     description: returns data of all agents' political participation over time
+    #     output:
+    #          - ndarray of shape (n_agents, time) of the political participation of each agent at each timestep
+    #     '''
+    #     return np.array([agent.pps for agent in self.agents])

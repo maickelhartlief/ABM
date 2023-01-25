@@ -20,6 +20,7 @@ from utils import set_valid
 import numpy as np
 import random
 from mesa import Agent, Model, space, time,  DataCollector
+import networkx as nx
 
 class Member(Agent):
     '''
@@ -95,6 +96,9 @@ class Member(Agent):
         # initial settings for contacts and time spent in location
         self.move_community()
 
+        # initialize social connections based on similarity
+        self.new_social()
+
         # initialize ppz
         self.update_pp()
 
@@ -107,6 +111,11 @@ class Member(Agent):
         # let agent interact according to probability
         if random.uniform(0, 1) < self.model.prob_interaction:
             self.interact()
+
+        # Let agent make new connection and remove old according to probability
+        if random.uniform(0, 1) < self.model.prob_friend:
+            self.new_social()
+            self.remove_social()
 
         # move agent according to probability
         if random.uniform(0, 1) < self.model.prob_move:
@@ -189,10 +198,13 @@ class Member(Agent):
             return
 
         # pick interaction partner
-        partner = random.choice(self.model.agents)
-        while partner == self:
-            partner = random.choice(self.model.agents)
+        partner_id = random.choice(self.socials_ids)
+        partner = [agent for agent in self.model.agents if agent.unique_id == partner_id][0]
 
+
+        # TODO indexing doesn't work
+        # @Do: If you want to do this just use partner.unique_id instead of self.model.graph[partner.unique_id]
+        # path_length = nx.shortest_path_length(self.model.graph, self.unique_id, partner.unique_id)
 
         # check whether partner's personality would accept interaction
         # NOTE: this states that only people that are already politically active actually interact 
@@ -231,7 +243,7 @@ class Member(Agent):
         description: replaces the agent with a new identical agent, simulating the
                      agent moving to a different community and another taking its place
         '''
-        self.time_in_community = 1
+        self.time_in_community = 0
         self.contacts = 0
         self.until_eligible = self.model.until_eligible
 
@@ -245,6 +257,103 @@ class Member(Agent):
             return
 
         self.until_eligible -= 1
+
+
+    def distance(self, partner):
+        """
+        description: calculate the distance between the self and the partner by Euclidean
+        distance between personality traits related to friendship and
+        social economic status.
+        inputs:
+            - partner: Agent to compare with
+        output:
+            - distance: float; bigger if individuals are less similar
+
+        """
+        friend_charact = np.array([self.social, self.autonomous, self.approaching, self.ses])
+        p_friend_charact = np.array([partner.social, partner.autonomous, partner.approaching, partner.ses])
+
+        return np.linalg.norm((friend_charact - p_friend_charact))
+
+
+        # taken from https://github.com/MbBrainz/ABM-project-group8/blob/main/polarization/core/model.py
+    @property
+    def socials_ids(self):
+        """
+        description: creates a list of ids that the agent is connected to in the
+        social network
+        """
+        return [social_id for social_id in self.model.graph[self.unique_id]]
+
+    @property
+    def unconnected_ids(self):
+        """
+        description: creates a list of ids that the agent is not connected to in the
+        social network
+        """
+        return [id for id in self.model.graph.nodes if (id not in self.socials_ids + [self.unique_id])]
+
+    def new_social(self):
+        """
+        Adds a new random connection from the agent with a probability determined by the Fermi-Dirac distribution.
+        choice of addition depends on similarity in SES, and characteristics social, approaching and autonomous
+        """
+        # determine how large the pool of potential candidates is, depending on
+        # how many unconnected nodes are left or how many nodes we want to max
+        # add per step
+        if len(self.unconnected_ids) < self.model.edges_per_step:
+            n_potentials = len(self.unconnected_ids)
+        else:
+            n_potentials = self.model.edges_per_step
+
+        # randomly select 'n_potentials' from people the agent is not connected to
+        pot_make_ids = np.random.choice(self.unconnected_ids, size=n_potentials, replace=False)
+
+        # get agents from model.schedule with the id's from the pot_make_ids
+        pot_makes = [social for social in self.model.schedule.agents if social.unique_id in pot_make_ids]
+
+        for potential in pot_makes:
+            self.consider_connection(potential, method="ADD")
+
+    def remove_social(self):
+        """
+        Removes a few random connections from the agent with a probability determined by the Fermi-Dirac distribution.
+        Choice of removal depends on similarity in on similarity in SES, and characteristics social, approaching and autonomous
+        """
+        # determine how large the pool of potential candidates is, depending on
+        # how many unconnected nodes are left or how many edges we want to max
+        # add per step
+        if len(self.socials_ids) < self.model.edges_per_step:
+            n_potentials = len(self.socials_ids)
+        else:
+            n_potentials = self.model.edges_per_step
+
+        # randomly select 'n_potentials' from the agent's network
+        pot_break_ids = np.random.choice(self.socials_ids, size=n_potentials, replace=False)
+
+        # get agents from model.schedule with the id's from the pot_break_ids
+        pot_breaks = [social for social in self.model.schedule.agents if social.unique_id in pot_break_ids]
+
+        for potential in pot_breaks:
+            self.consider_connection(potential, method="REMOVE")
+
+    def consider_connection(self, partner, method):
+        """
+        Calculate the (Fermi Dirac) probability of agent being connected to 'potential agent' and based on method add or remove the connection randomly
+        Args:
+            partner (Agent): the agent to consider
+            method (str): "ADD" or "REMOVE"
+        """
+        p_ij = 1 / ( 1 + np.exp(self.model.fermi_alpha * (self.distance(partner) - self.model.fermi_b)))
+
+        if method == "ADD":
+            if p_ij > random.random():
+                self.model.graph.add_edge(self.unique_id, partner.unique_id)
+                #print("connection added")
+
+        if method == "REMOVE":
+            if p_ij < random.random():
+                self.model.graph.remove_edge(self.unique_id, partner.unique_id)
 
 
     def update_pp(self):

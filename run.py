@@ -11,6 +11,7 @@ import numpy as np
 from scipy import stats
 from importlib import import_module
 from mesa import Agent, Model, space, time, DataCollector
+import networkx as nx
 
 ## import parameter configuration from file (default: configs.normal)
 params = import_module('configs.' + ('normal' if len(sys.argv) < 2 else sys.argv[1]))
@@ -20,8 +21,16 @@ params = import_module('configs.' + ('normal' if len(sys.argv) < 2 else sys.argv
 model = Party_model(prob_stimulus = params.prob_stimulus,
               prob_interaction = params.prob_interaction,
               prob_move = params.prob_move,
+              prob_friend = params.prob_friend,
               until_eligible = params.until_eligible,
-              characteristics_affected = params.characteristics_affected)
+              characteristics_affected = params.characteristics_affected,
+              edges_per_step = params.edges_per_step,
+              n_agents = params.n_agents,
+              network = 'default',
+              m_barabasi = params.m_barabasi,
+              fermi_alpha = params.fermi_alpha,
+              fermi_b = params.fermi_b
+              )
 
 
 ## create agents
@@ -54,6 +63,7 @@ for idx in range(params.n_agents):
 
 ## run simulation
 
+
 for iteration in range(params.n_iterations):
     model.step()
     '''
@@ -69,6 +79,9 @@ for iteration in range(params.n_iterations):
           f'ses  = {smith.ses}\n')
     print(f'pp = {smith.pps}')
     '''
+
+nx.draw(model.graph)
+plt.show()
 
 df = model.datacollector.get_agent_vars_dataframe()
 
