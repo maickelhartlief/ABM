@@ -89,7 +89,7 @@ class Member(Agent):
         self.outtaking = set_valid(outtaking, verbose = True, name = 'outtaking')
         self.expressive = set_valid(expressive, verbose = True, name = 'expressive')
         self.social = set_valid(social, verbose = True, name = 'social')
-        self.ses = set_valid(ses, lower = 1, upper = 3, verbose = True, name = 'ses')
+        self.ses = set_valid(ses, lower = 1, upper = 3, verbose = False, name = 'ses')
         self.pps = None
         self.char_modifiers = char_modifiers
 
@@ -188,14 +188,15 @@ class Member(Agent):
         '''
 
         # # check whether personality would lead to interaction
-        if self.pps < 3:
-            return
-        if self.social + (self.pps / 3 + 1) + self.active + random.uniform(0, 2.5) <= 10:
-            return
+        # if self.pps < 3:
+        #     return
+        # # if self.social + (self.pps / 3 + 1) + self.active + random.uniform(0, 2.5) <= 10:
+        # #     return
 
         # pick interaction partner
-        partner_id = random.choice(self.socials_ids)
-        partner = [agent for agent in self.model.agents if agent.unique_id == partner_id][0]
+        if len(self.socials_ids):
+            partner_id = random.choice(self.socials_ids)
+            partner = [agent for agent in self.model.agents if agent.unique_id == partner_id][0]
 
 
         # TODO indexing doesn't work
@@ -203,32 +204,32 @@ class Member(Agent):
         # path_length = nx.shortest_path_length(self.model.graph, self.unique_id, partner.unique_id)
 
         # check whether partner's personality would accept interaction
-        if partner.pps == 0:
-             return
-        if partner.social + partner.active + partner.approaching + random.uniform(0, 2.5) <= 10:
-             return
-        else:
-            ## interact
-            mod = self.interaction_modifier()
-            p_mod = partner.interaction_modifier()
-
-            if self.approaching > partner.approaching:
-                partner.approaching += p_mod
+            if partner.pps == 0:
+                 return
+            if partner.social + partner.active + partner.approaching + random.uniform(0, 2.5) <= 10:
+                 return
             else:
-                self.approaching += mod
+                ## interact
+                mod = self.interaction_modifier()
+                p_mod = partner.interaction_modifier()
 
-            pps_diff = self.pps - partner.pps
-            if pps_diff > 0:
-                partner.active += p_mod
-                # TODO seems like this should be mod instead of p_mod, but this is what the base model does
-                self.overt += mod
-            elif pps_diff < 0:
-                self.active += mod
-                # TODO seems like this should be p_mod instead of mod, but this is what the base model does
-                partner.overt += p_mod
+                if self.approaching > partner.approaching:
+                    partner.approaching += p_mod
+                else:
+                    self.approaching += mod
 
-            self.contacts += 1
-            partner.contacts += 1
+                pps_diff = self.pps - partner.pps
+                if pps_diff > 0:
+                    partner.active += p_mod
+                    # TODO seems like this should be mod instead of p_mod, but this is what the base model does
+                    self.overt += mod
+                elif pps_diff < 0:
+                    self.active += mod
+                    # TODO seems like this should be p_mod instead of mod, but this is what the base model does
+                    partner.overt += p_mod
+
+                self.contacts += 1
+                partner.contacts += 1
 
 
     def move_community(self):

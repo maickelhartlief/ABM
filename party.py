@@ -48,7 +48,7 @@ class Party_model(Model):
         self.prob_stimulus = utils.set_valid(prob_stimulus, upper = 1, verbose = True, name = 'p')
         self.prob_interaction = utils.set_valid(prob_interaction, upper = 1, verbose = True, name = 'q')
         self.prob_move = utils.set_valid(prob_move, upper = 1, verbose = True, name = 'r')
-        self.prob_friend = prob_friend
+        self.prob_friend = utils.set_valid(prob_friend, upper = 1, verbose = True, name = "prob_friend")
         self.until_eligible = until_eligible
         self.characteristics_affected = characteristics_affected
         self.edges_per_step = edges_per_step
@@ -58,7 +58,7 @@ class Party_model(Model):
         self.m_barabasi = m_barabasi
         self.fermi_alpha = fermi_alpha
         self.fermi_b = fermi_b
-    
+
         self.schedule = time.RandomActivation(self)
         self.time = 0
         self.agents = np.array([])
@@ -66,7 +66,7 @@ class Party_model(Model):
 
 
         self.datacollector = DataCollector(agent_reporters = {"PPS":"pps"})
-        
+
         if self.network == "default":
             self.graph = nx.complete_graph(n=self.n_agents)
         else:
