@@ -90,8 +90,10 @@ class Member(Agent):
         # initial settings for contacts and time spent in location
         self.move_community()
 
-        # initialize social connections based on similarity
-        self.new_social()
+        if self.model.network = "ba":
+            # initialize social connections based on similarity
+            self.new_social()
+            self.remove_social()
 
         # initialize ppz
         self.update_pp()
@@ -106,10 +108,11 @@ class Member(Agent):
         if random.uniform(0, 1) < self.model.prob_interaction:
             self.interact()
 
-        # Let agent make new connection and remove old according to probability
-        if random.uniform(0, 1) < self.model.prob_friend:
-            self.new_social()
-            self.remove_social()
+        # # Let agent make new connection and remove old according to probability
+        if dynamic:
+            if random.uniform(0, 1) < self.model.prob_friend:
+                self.new_social()
+                self.remove_social()
 
         # move agent according to probability
         if random.uniform(0, 1) < self.model.prob_move:
@@ -191,8 +194,8 @@ class Member(Agent):
         #       the model. changing this makes the percentage of voters much more accurate.
         if self.pps < 3 and random.randint(0, 1):
             return
-        if self.social + (self.pps / 3 + 1) + self.active + random.uniform(0, 2.5) <= 10:
-            return
+        # if self.social + (self.pps / 3 + 1) + self.active + random.uniform(0, 2.5) <= 10:
+        #     return
 
         # pick interaction partner from friends
         # if len(self.socials_ids):
@@ -228,8 +231,8 @@ class Member(Agent):
         #       the model. changing this makes the percentage of voters much more accurate.
         if partner.pps == 0 and random.randint(0, 1):
             return
-        if partner.social + partner.active + partner.approaching + random.uniform(0, 2.5) <= 10:
-            return
+        # if partner.social + partner.active + partner.approaching + random.uniform(0, 2.5) <= 10:
+        #     return
 
         ## interact
         mod = self.interaction_modifier(partner)
