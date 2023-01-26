@@ -45,13 +45,6 @@ class Party_model(Model):
             - until_eligible = steps needed for new agents to be allowed to vote,
             - characteristics_affected = dictionary of effect of stimulus on agent
         '''
-        
-        # create network
-        if network == 'fully_connected':
-            self.graph = nx.complete_graph(n = n_agents)
-        elif network == 'ba':
-            self.graph = nx.barabasi_albert_graph(n = n_agents, m = m_barabasi)
-
         self.prob_stimulus = utils.set_valid(prob_stimulus, upper = 1, verbose = True, name = 'p')
         self.prob_interaction = utils.set_valid(prob_interaction, upper = 1, verbose = True, name = 'q')
         self.prob_move = utils.set_valid(prob_move, upper = 1, verbose = True, name = 'r')
@@ -77,6 +70,12 @@ class Party_model(Model):
         self.datacollector = DataCollector(model_reporters = {"voters" : lambda m : self.get_voters()},
                                            agent_reporters = {"political participation" : "pps"})
 
+        # create network
+        if network == 'fully_connected':
+            self.graph = nx.complete_graph(n = n_agents)
+        elif network == 'ba':
+            self.graph = nx.barabasi_albert_graph(n = n_agents, m = m_barabasi)
+        # self.graph = nx.Graph()
 
     def add_agent(self, agent):
         '''
@@ -86,6 +85,10 @@ class Party_model(Model):
         '''
         self.agents = np.append(self.agents, agent)
         self.schedule.add(agent)
+
+        # Attaches agent to node
+        self.graph.nodes(agent)
+
 
 
     def step(self):
@@ -102,4 +105,5 @@ class Party_model(Model):
 
 
     def get_voters(self):
+        # TODO shouldn't this be 1?
         return len([True for agent in self.agents if agent.pps >= 2])

@@ -108,7 +108,7 @@ class Member(Agent):
         if random.uniform(0, 1) < self.model.prob_interaction:
             self.interact()
 
-        # # Let agent make new connection and remove old according to probability
+        # Let agent make new connection and remove old according to probability
         if self.model.dynamic:
             if random.uniform(0, 1) < self.model.prob_friend:
                 self.new_social()
