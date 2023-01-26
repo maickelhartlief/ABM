@@ -68,7 +68,8 @@ class Party_model(Model):
         self.p_accept_list = []
 
 
-        self.datacollector = DataCollector(agent_reporters = {"PPS":"pps"})
+        self.datacollector = DataCollector(model_reporters = {"voters" : lambda m : self.get_voters()}, 
+                                           agent_reporters = {"political participation" : "pps"})
 
         if self.network == "default":
             self.graph = nx.complete_graph(n=self.n_agents)
@@ -100,4 +101,4 @@ class Party_model(Model):
 
 
     def get_voters(self):
-        return len([1 for agent in self.agents if agent.pps >= 2])
+        return len([True for agent in self.agents if agent.pps >= 2])

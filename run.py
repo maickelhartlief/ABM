@@ -12,6 +12,7 @@ from scipy import stats
 from importlib import import_module
 from mesa import Agent, Model, space, time, DataCollector
 import networkx as nx
+import seaborn as sns
 
 ## import parameter configuration from file (default: configs.normal)
 params = import_module('configs.' + ('normal' if len(sys.argv) < 2 else sys.argv[1]))
@@ -90,10 +91,8 @@ for iteration in range(params.n_iterations):
     print(f'pp = {smith.pps}')
     '''
 
-nx.draw(model.graph)
-plt.show()
-
-df = model.datacollector.get_agent_vars_dataframe()
+agent_data = model.datacollector.get_agent_vars_dataframe()
+model_data = model.datacollector.get_model_vars_dataframe()
 
 #
 ## visualize results
@@ -102,14 +101,31 @@ if not os.path.exists(result_path):
    os.makedirs(result_path)
 result_path += '/'
 
+# plots network structure
+nx.draw(model.graph)
+plt.savefig(result_path + 'network.png')
+plt.clf()
 
-plt.plot(df.groupby("Step").mean())
+# plot the number of voters over time
+sns.lineplot(data = model_data, 
+             x = model_data.index,
+             y = 'voters')
+plt.savefig(result_path + 'voters.png')
+plt.clf()
+
+# plot the mean political participation over time
+sns.lineplot(data = agent_data.groupby("Step").mean(),
+             x = 'Step',
+             y = 'political participation')
 plt.savefig(result_path + 'mean_pp.png')
 plt.clf()
 
-#plot number of agents with certain level of political participation over time
+# plot number of agents with certain level of political participation over time
 for pp in range(13):
-    plt.plot((df[df["PPS"] == pp]).groupby("Step").count(), label = pp)
+    sns.lineplot(data = agent_data[agent_data["political participation"] == pp].groupby("Step").count(), 
+                 x = 'Step',
+                 y = 'political participation',
+                 label = pp)
 
 plt.legend()
 plt.savefig(result_path + 'agents_per_pp.png')
@@ -117,12 +133,18 @@ plt.clf()
 
 # # plot number of agents within certain ranges of political participation over time
 # # NOTE: this is an aggregated version of the previous, like in the base model
-plt.plot((df[df["PPS"] == 0]).groupby("Step").count(), label = 'Apathetic (0)',
-         color = 'tan')
-plt.plot((df[(df["PPS"] > 0) & (df["PPS"] < 5)]).groupby("Step").count(), label = 'Spectators (1-4)', color ='orange')
-plt.plot((df[(df["PPS"] >= 5) & (df["PPS"] <= 7)]).groupby("Step").count(), label = 'Transitionals (5-7)', color ='pink')
-plt.plot((df[df["PPS"] >= 8]).groupby("Step").count(), label = 'Gladiators (8-12)', color ='red')
+pps_aggr = [ agent_data["political participation"] == 0, 
+         (agent_data["political participation"] > 0) & (agent_data["political participation"] < 5),
+         (agent_data["political participation"] >= 5) & (agent_data["political participation"] <= 7),
+         agent_data["political participation"] >= 8 ]
+labels = ['Apathetic (0)', 'Spectators (1-4)', 'Transitionals (5-7)', 'Gladiators (8-12)']
+colors = ['tan', 'orange', 'pink', 'red']
+for pps, label, color in zip(pps_aggr, labels, colors):
+    sns.lineplot(data = agent_data[pps].groupby("Step").count(), 
+                 x = 'Step',
+                 y = 'political participation',
+                 label = label,
+                 color = color)
 plt.legend()
-
 plt.savefig(result_path + 'agents_per_pp_aggr.png')
 plt.clf()
