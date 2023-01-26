@@ -63,12 +63,22 @@ for idx in range(params.n_agents):
 
 ## run simulation
 
+# for i in range(1000):
+#     model.step()
+# #print(model.p_accept_list)
+# nx.draw(model.graph)
+# plt.show()
 
+# plt.hist(model.p_accept_list)
+# plt.show()
+
+
+#
 for iteration in range(params.n_iterations):
     model.step()
     '''
     smith = model.agents[0]
-    print(f'active = {round(smith.active, 1)}\n' 
+    print(f'active = {round(smith.active, 1)}\n'
           f'overt  = {round(smith.overt, 1)}\n'
           f'autonomous  = {round(smith.autonomous, 1)}\n'
           f'approaching  = {round(smith.approaching, 1)}\n'

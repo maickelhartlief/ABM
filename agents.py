@@ -217,9 +217,16 @@ class Member(Agent):
         else:
             return
 
-        if path_length >= 2:
-            return
+        # if path_length >= 2:
+        #     return
 
+        # calculate probability that interaction is accepted based on path length
+        # path length 1 = 0.9, path length 2 = 0.3, path length 3 = 0.1 probability
+
+        p_accept = 1 / ( 1 + np.exp(self.model.fermi_alpha * (path_length - self.model.fermi_b)))
+
+        if p_accept < random.random():
+            return
         # check whether partner's personality would accept interaction
         # NOTE: this states that only people that are already politically active actually interact
         #       with others about politics. This seems off, and there are barely interactions in
@@ -359,6 +366,7 @@ class Member(Agent):
             method (str): "ADD" or "REMOVE"
         """
         p_ij = 1 / ( 1 + np.exp(self.model.fermi_alpha * (self.distance(partner) - self.model.fermi_b)))
+        # self.model.p_accept_list.append(p_ij)
 
         if method == "ADD":
             if p_ij > random.random():

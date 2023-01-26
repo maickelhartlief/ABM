@@ -29,4 +29,4 @@ def set_valid(param, lower = 0, upper = 5, verbose = False, name = ''):
 
 # normalized the distance to be inbetween .5 and 2, so that the max and min modifier is doubled or halfed.
 def distance_normalizer(distance):
-    return distance / sqrt(5*2 * 3 + 2*2) * 1.5 + .5
+    return distance / sqrt(5**2 * 3 + 2**2) * 1.5 + .5
