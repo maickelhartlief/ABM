@@ -27,7 +27,7 @@ model = Party_model(prob_stimulus = params.prob_stimulus,
               characteristics_affected = params.characteristics_affected,
               edges_per_step = params.edges_per_step,
               n_agents = params.n_agents,
-              network = 'default',
+              network = 'barabasi',
               m_barabasi = params.m_barabasi,
               fermi_alpha = params.fermi_alpha,
               fermi_b = params.fermi_b
@@ -107,7 +107,7 @@ plt.savefig(result_path + 'network.png')
 plt.clf()
 
 # plot the number of voters over time
-sns.lineplot(data = model_data, 
+sns.lineplot(data = model_data,
              x = model_data.index,
              y = 'voters')
 plt.savefig(result_path + 'voters.png')
@@ -122,7 +122,7 @@ plt.clf()
 
 # plot number of agents with certain level of political participation over time
 for pp in range(13):
-    sns.lineplot(data = agent_data[agent_data["political participation"] == pp].groupby("Step").count(), 
+    sns.lineplot(data = agent_data[agent_data["political participation"] == pp].groupby("Step").count(),
                  x = 'Step',
                  y = 'political participation',
                  label = pp)
@@ -133,14 +133,14 @@ plt.clf()
 
 # # plot number of agents within certain ranges of political participation over time
 # # NOTE: this is an aggregated version of the previous, like in the base model
-pps_aggr = [ agent_data["political participation"] == 0, 
+pps_aggr = [ agent_data["political participation"] == 0,
          (agent_data["political participation"] > 0) & (agent_data["political participation"] < 5),
          (agent_data["political participation"] >= 5) & (agent_data["political participation"] <= 7),
          agent_data["political participation"] >= 8 ]
 labels = ['Apathetic (0)', 'Spectators (1-4)', 'Transitionals (5-7)', 'Gladiators (8-12)']
 colors = ['tan', 'orange', 'pink', 'red']
 for pps, label, color in zip(pps_aggr, labels, colors):
-    sns.lineplot(data = agent_data[pps].groupby("Step").count(), 
+    sns.lineplot(data = agent_data[pps].groupby("Step").count(),
                  x = 'Step',
                  y = 'political participation',
                  label = label,

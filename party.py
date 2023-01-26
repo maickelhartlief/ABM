@@ -35,7 +35,8 @@ class Party_model(Model):
                  network = 'default', #Can be default, randomn of similarity
                  m_barabasi = 5,
                  fermi_alpha = 4,
-                 fermi_b = 1):
+                 fermi_b = 1
+                 dynamic = False):
         '''
         description: initializes new Model object
         inputs:
@@ -58,6 +59,7 @@ class Party_model(Model):
         self.m_barabasi = m_barabasi
         self.fermi_alpha = fermi_alpha
         self.fermi_b = fermi_b
+        self.dynamic = dynamic
 
         self.schedule = time.RandomActivation(self)
         self.time = 0
@@ -68,7 +70,7 @@ class Party_model(Model):
         self.p_accept_list = []
 
 
-        self.datacollector = DataCollector(model_reporters = {"voters" : lambda m : self.get_voters()}, 
+        self.datacollector = DataCollector(model_reporters = {"voters" : lambda m : self.get_voters()},
                                            agent_reporters = {"political participation" : "pps"})
 
         if self.network == "default":
@@ -91,13 +93,13 @@ class Party_model(Model):
         '''
         description: updates environment and takes a step for each agent
         '''
-        self.time += 1 # TODO: might already be tracked in scheduler
-
         # check whether stimulus happens for all agents
         self.stimulus = random.uniform(0, 1) < self.prob_stimulus
 
-        self.datacollector.collect(self)
+        # TODO might be worth collecting after the step?
+
         self.schedule.step()
+        self.datacollector.collect(self)
 
 
     def get_voters(self):
