@@ -17,3 +17,4 @@ prob_friend = 1 / 9
 m_barabasi = 5
 fermi_alpha = 4
 fermi_b = 1.8
+network = 'ba' #'fully_connected'

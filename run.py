@@ -17,21 +17,25 @@ import seaborn as sns
 ## import parameter configuration from file (default: configs.normal)
 params = import_module('configs.' + ('normal' if len(sys.argv) < 2 else sys.argv[1]))
 
+## create network
+if params.network == 'fully_connected':
+    graph = nx.complete_graph(n = params.n_agents)
+elif params.network == 'ba':
+    graph = nx.barabasi_albert_graph(n = params.n_agents, m = params.m_barabasi)
 
 ## create model
-model = Party_model(prob_stimulus = params.prob_stimulus,
-              prob_interaction = params.prob_interaction,
-              prob_move = params.prob_move,
-              prob_friend = params.prob_friend,
-              until_eligible = params.until_eligible,
-              characteristics_affected = params.characteristics_affected,
-              edges_per_step = params.edges_per_step,
-              n_agents = params.n_agents,
-              network = 'default',
-              m_barabasi = params.m_barabasi,
-              fermi_alpha = params.fermi_alpha,
-              fermi_b = params.fermi_b
-              )
+model = Party_model(graph = graph,
+                    prob_stimulus = params.prob_stimulus,
+                    prob_interaction = params.prob_interaction,
+                    prob_move = params.prob_move,
+                    prob_friend = params.prob_friend,
+                    until_eligible = params.until_eligible,
+                    characteristics_affected = params.characteristics_affected,
+                    edges_per_step = params.edges_per_step,
+                    n_agents = params.n_agents,
+                    m_barabasi = params.m_barabasi,
+                    fermi_alpha = params.fermi_alpha,
+                    fermi_b = params.fermi_b)
 
 
 ## create agents
@@ -48,8 +52,8 @@ elif params.char_distr == 'uniform': # uniform distribution within limits
 for idx in range(params.n_agents):
     model.add_agent(Member(idx,
                            model,
-                           # TODO: would be more natural to make this chance related to prob_move.
-                           until_eligible = 0 if random.uniform(0, 1) < .8 else params.until_eligible,
+                           # NOTE: This was a flat 20% probability, butit is more natural to make this chance related to prob_move.
+                           until_eligible = 0 if random.uniform(0, 1) < params.prob_move else params.until_eligible,
                            vote_duty = random.uniform(0, 1) < .03,
                            active = characteristics[idx, 0],
                            overt = characteristics[idx, 1],
@@ -84,7 +88,7 @@ for iteration in range(params.n_iterations):
 agent_data = model.datacollector.get_agent_vars_dataframe()
 model_data = model.datacollector.get_model_vars_dataframe()
 
-#
+
 ## visualize results
 result_path = 'results'
 if not os.path.exists(result_path):
