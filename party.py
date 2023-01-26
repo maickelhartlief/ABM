@@ -23,13 +23,13 @@ class Party_model(Model):
     '''
 
     def __init__(self,
-                 graph, #Can be default, randomn of similarity
                  prob_stimulus,
                  prob_interaction,
                  prob_move,
                  prob_friend,
                  until_eligible,
                  characteristics_affected,
+                 network = 'fully_connected',
                  edges_per_step = 1,
                  n_agents = 100,
                  m_barabasi = 5,
@@ -44,7 +44,13 @@ class Party_model(Model):
             - until_eligible = steps needed for new agents to be allowed to vote,
             - characteristics_affected = dictionary of effect of stimulus on agent
         '''
-        self.graph = graph
+        
+        # create network
+        if network == 'fully_connected':
+            self.graph = nx.complete_graph(n = n_agents)
+        elif network == 'ba':
+            self.graph = nx.barabasi_albert_graph(n = n_agents, m = m_barabasi)
+
         self.prob_stimulus = utils.set_valid(prob_stimulus, upper = 1, verbose = True, name = 'p')
         self.prob_interaction = utils.set_valid(prob_interaction, upper = 1, verbose = True, name = 'q')
         self.prob_move = utils.set_valid(prob_move, upper = 1, verbose = True, name = 'r')
@@ -54,7 +60,6 @@ class Party_model(Model):
         self.edges_per_step = edges_per_step
         self.n_agents = n_agents
 
-        self.m_barabasi = m_barabasi
         self.fermi_alpha = fermi_alpha
         self.fermi_b = fermi_b
 

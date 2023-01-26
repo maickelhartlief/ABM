@@ -17,20 +17,15 @@ import seaborn as sns
 ## import parameter configuration from file (default: configs.normal)
 params = import_module('configs.' + ('normal' if len(sys.argv) < 2 else sys.argv[1]))
 
-## create network
-if params.network == 'fully_connected':
-    graph = nx.complete_graph(n = params.n_agents)
-elif params.network == 'ba':
-    graph = nx.barabasi_albert_graph(n = params.n_agents, m = params.m_barabasi)
 
 ## create model
-model = Party_model(graph = graph,
-                    prob_stimulus = params.prob_stimulus,
+model = Party_model(prob_stimulus = params.prob_stimulus,
                     prob_interaction = params.prob_interaction,
                     prob_move = params.prob_move,
                     prob_friend = params.prob_friend,
                     until_eligible = params.until_eligible,
                     characteristics_affected = params.characteristics_affected,
+                    network = params.network,
                     edges_per_step = params.edges_per_step,
                     n_agents = params.n_agents,
                     m_barabasi = params.m_barabasi,
