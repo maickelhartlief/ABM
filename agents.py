@@ -5,17 +5,11 @@ TODO:
   which now means that a person moving always takes the exact
   same characteristics as the previous owner of that house.
   this seems odd.
-- potentially expand to multiple communities?
-   - support with theory about how communities interact and change
-   - what does a community represent? party? demographic? location? social network? (probably party)
-   - community class with community-wide variables?
-- implement more of the presets
-- figure out why results don't match base model
 - implement more analysis
-- fix .gitignore...
+- add voters per iteration as model level data collection
 '''
 
-from utils import set_valid
+from utils import set_valid, distance_normalizer
 
 import numpy as np
 import random
@@ -32,13 +26,13 @@ class Member(Agent):
         - model: model object agent is a part of
         - until_eligible: optional, number of steps until an agent can vote
         - vote_duty: optional, whether agent must vote
-        - active: optional, one of the agent's charactaristics
-        - overt: optional, one of the agent's charactaristics
-        - autonomous: optional, one of the agent's charactaristics
-        - continuous: optional, one of the agent's charactaristics
-        - outtaking: optional, one of the agent's charactaristics
-        - expressive: optional, one of the agent's charactaristics
-        - social: optional, one of the agent's charactaristics
+        - active: optional, one of the agent's characteristics
+        - overt: optional, one of the agent's characteristics
+        - autonomous: optional, one of the agent's characteristics
+        - continuous: optional, one of the agent's characteristics
+        - outtaking: optional, one of the agent's characteristics
+        - expressive: optional, one of the agent's characteristics
+        - social: optional, one of the agent's characteristics
         - ses: optional, socio-economic status
         - char_modifiers: optional, dictionary with tendencies for characteristics
           to change according to stimulus (>.5 = up, <.5 = down)
@@ -89,7 +83,7 @@ class Member(Agent):
         self.outtaking = set_valid(outtaking, verbose = True, name = 'outtaking')
         self.expressive = set_valid(expressive, verbose = True, name = 'expressive')
         self.social = set_valid(social, verbose = True, name = 'social')
-        self.ses = set_valid(ses, lower = 1, upper = 3, verbose = True, name = 'ses')
+        self.ses = set_valid(ses, lower = 1, upper = 3, verbose = False, name = 'ses')
         self.pps = None
         self.char_modifiers = char_modifiers
 
@@ -164,7 +158,7 @@ class Member(Agent):
             self.outtaking = set_valid(self.modify_characteristic('outtaking') + self.continuous)
 
 
-    def interaction_modifier(self):
+    def interaction_modifier(self, partner):
         '''
         description: calculates how characteristics should be modified based on an interaction
                      with another agent
@@ -173,11 +167,15 @@ class Member(Agent):
         '''
 
         # set modification to political participation
-        mod = random.randint(0, 1) / (self.autonomous + self.continuous)
+        # NOTE: stochasticity here was moved a level up to rejecting / accepting interaction
+        mod = 1 / (self.autonomous + self.continuous)
 
         # modify less when interaction is cynical
         if random.randint(0, int(19 * self.ses)) == 0:
             mod /= 10
+
+        # difference between participants hierin meenemen
+        mod /= distance_normalizer(self.distance(partner))
 
         return mod
 
@@ -187,48 +185,66 @@ class Member(Agent):
         description: attempts to interact with another agent, changing both their characteristics
         '''
 
-        # # check whether personality would lead to interaction
-        if self.pps < 3:
+        # check whether personality would lead to interaction
+        # NOTE: this states that only people that are already politically active actually interact
+        #       with others about politics. This seems off, and there are barely interactions in
+        #       the model. changing this makes the percentage of voters much more accurate.
+        if self.pps < 3 and random.randint(0, 1):
             return
         if self.social + (self.pps / 3 + 1) + self.active + random.uniform(0, 2.5) <= 10:
             return
 
-        # pick interaction partner
-        partner_id = random.choice(self.socials_ids)
-        partner = [agent for agent in self.model.agents if agent.unique_id == partner_id][0]
-    
+        # pick interaction partner from friends
+        # if len(self.socials_ids):
+        #     partner_id = random.choice(self.socials_ids)
+        #     partner = [agent for agent in self.model.agents if agent.unique_id == partner_id][0]
+
+        partner = random.choice(self.model.agents)
+        while partner == self:
+            partner = random.choice(self.model.agents)
 
         # TODO indexing doesn't work
         # @Do: If you want to do this just use partner.unique_id instead of self.model.graph[partner.unique_id]
-        # path_length = nx.shortest_path_length(self.model.graph, self.unique_id, partner.unique_id)
+
+        # path length
+        if nx.has_path(self.model.graph, self.unique_id, partner.unique_id):
+            path_length = nx.shortest_path_length(self.model.graph, self.unique_id, partner.unique_id)
+        else:
+            return
+
+        if path_length >= 2:
+            return
 
         # check whether partner's personality would accept interaction
-        if partner.pps == 0:
-             return
+        # NOTE: this states that only people that are already politically active actually interact
+        #       with others about politics. This seems off, and there are barely interactions in
+        #       the model. changing this makes the percentage of voters much more accurate.
+        if partner.pps == 0 and random.randint(0, 1):
+            return
         if partner.social + partner.active + partner.approaching + random.uniform(0, 2.5) <= 10:
-             return
+            return
+
+        ## interact
+        mod = self.interaction_modifier(partner)
+        p_mod = partner.interaction_modifier(self)
+
+        if self.approaching > partner.approaching:
+            partner.approaching = set_valid(partner.approaching + p_mod)
         else:
-            ## interact
-            mod = self.interaction_modifier()
-            p_mod = partner.interaction_modifier()
+            self.approaching = set_valid(self.approaching + mod)
 
-            if self.approaching > partner.approaching:
-                partner.approaching += p_mod
-            else:
-                self.approaching += mod
+        pps_diff = self.pps - partner.pps
+        if pps_diff > 0:
+            partner.active = set_valid(partner.active + p_mod)
+            # TODO seems like this should be mod instead of p_mod, but this is what the base model does
+            self.overt = set_valid(self.overt + mod)
+        elif pps_diff < 0:
+            self.active = set_valid(self.active + mod)
+            # TODO seems like this should be p_mod instead of mod, but this is what the base model does
+            partner.overt = set_valid(partner.overt + p_mod)
 
-            pps_diff = self.pps - partner.pps
-            if pps_diff > 0:
-                partner.active += p_mod
-                # TODO seems like this should be mod instead of p_mod, but this is what the base model does
-                self.overt += mod
-            elif pps_diff < 0:
-                self.active += mod
-                # TODO seems like this should be p_mod instead of mod, but this is what the base model does
-                partner.overt += p_mod
-
-            self.contacts += 1
-            partner.contacts += 1
+        self.contacts += 1
+        partner.contacts += 1
 
 
     def move_community(self):
@@ -236,7 +252,7 @@ class Member(Agent):
         description: replaces the agent with a new identical agent, simulating the
                      agent moving to a different community and another taking its place
         '''
-        self.time_in_community = 0
+        self.time_in_community = 1
         self.contacts = 0
         self.until_eligible = self.model.until_eligible
 
