@@ -196,7 +196,7 @@ class Member(Agent):
         # pick interaction partner
         partner_id = random.choice(self.socials_ids)
         partner = [agent for agent in self.model.agents if agent.unique_id == partner_id][0]
-
+    
 
         # TODO indexing doesn't work
         # @Do: If you want to do this just use partner.unique_id instead of self.model.graph[partner.unique_id]
