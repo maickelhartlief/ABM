@@ -90,7 +90,7 @@ class Member(Agent):
         # initial settings for contacts and time spent in location
         self.move_community()
 
-        if self.model.network = "ba":
+        if self.model.graph == "ba":
             # initialize social connections based on similarity
             self.new_social()
             self.remove_social()
@@ -109,7 +109,7 @@ class Member(Agent):
             self.interact()
 
         # # Let agent make new connection and remove old according to probability
-        if dynamic:
+        if self.model.dynamic:
             if random.uniform(0, 1) < self.model.prob_friend:
                 self.new_social()
                 self.remove_social()

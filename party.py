@@ -34,7 +34,7 @@ class Party_model(Model):
                  n_agents = 100,
                  m_barabasi = 5,
                  fermi_alpha = 4,
-                 fermi_b = 1
+                 fermi_b = 1,
                  dynamic = False):
         '''
         description: initializes new Model object
