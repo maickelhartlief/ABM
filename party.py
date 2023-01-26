@@ -23,7 +23,7 @@ class Party_model(Model):
     '''
 
     def __init__(self,
-                 #outer_agent,
+                 graph, #Can be default, randomn of similarity
                  prob_stimulus,
                  prob_interaction,
                  prob_move,
@@ -32,7 +32,6 @@ class Party_model(Model):
                  characteristics_affected,
                  edges_per_step = 1,
                  n_agents = 100,
-                 network = 'default', #Can be default, randomn of similarity
                  m_barabasi = 5,
                  fermi_alpha = 4,
                  fermi_b = 1
@@ -46,6 +45,7 @@ class Party_model(Model):
             - until_eligible = steps needed for new agents to be allowed to vote,
             - characteristics_affected = dictionary of effect of stimulus on agent
         '''
+        self.graph = graph
         self.prob_stimulus = utils.set_valid(prob_stimulus, upper = 1, verbose = True, name = 'p')
         self.prob_interaction = utils.set_valid(prob_interaction, upper = 1, verbose = True, name = 'q')
         self.prob_move = utils.set_valid(prob_move, upper = 1, verbose = True, name = 'r')
@@ -55,7 +55,6 @@ class Party_model(Model):
         self.edges_per_step = edges_per_step
         self.n_agents = n_agents
 
-        self.network = network
         self.m_barabasi = m_barabasi
         self.fermi_alpha = fermi_alpha
         self.fermi_b = fermi_b
@@ -72,11 +71,6 @@ class Party_model(Model):
 
         self.datacollector = DataCollector(model_reporters = {"voters" : lambda m : self.get_voters()},
                                            agent_reporters = {"political participation" : "pps"})
-
-        if self.network == "default":
-            self.graph = nx.complete_graph(n=self.n_agents)
-        else:
-            self.graph = nx.barabasi_albert_graph(n=self.n_agents, m=self.m_barabasi)
 
 
     def add_agent(self, agent):
