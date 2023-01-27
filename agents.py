@@ -16,6 +16,10 @@ import random
 from mesa import Agent, Model, space, time,  DataCollector
 import networkx as nx
 
+
+dont_interact = 0
+interact = 0
+
 class Member(Agent):
     '''
     description: an Agent object represents a person in a community that has a political
@@ -90,7 +94,7 @@ class Member(Agent):
         # initial settings for contacts and time spent in location
         self.move_community()
 
-        if self.model.graph == "ba":
+        if self.model.network == "ba":
             # initialize social connections based on similarity
             self.new_social()
             self.remove_social()
