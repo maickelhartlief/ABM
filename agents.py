@@ -90,8 +90,8 @@ class Member(Agent):
         # initial settings for contacts and time spent in location
         self.move_community()
 
-        if self.model.graph == "ba":
-            # initialize social connections based on similarity
+        if self.model.network == "homophily":
+            # initialize social connections homophilysed on similarity
             self.new_social()
             self.remove_social()
 
@@ -210,8 +210,8 @@ class Member(Agent):
         # @Do: If you want to do this just use partner.unique_id instead of self.model.graph[partner.unique_id]
 
         # path length
-        if nx.has_path(self.model.graph, self.unique_id, partner.unique_id):
-            path_length = nx.shortest_path_length(self.model.graph, self.unique_id, partner.unique_id)
+        if nx.has_path(self.model.graph, self, partner):
+            path_length = nx.shortest_path_length(self.model.graph, self, partner)
         else:
             return
 
@@ -302,7 +302,10 @@ class Member(Agent):
         description: creates a list of ids that the agent is connected to in the
         social network
         """
-        return [social_id for social_id in self.model.graph[self.unique_id]]
+        if self in self.model.graph.adj.keys():
+            return [social_id for social_id in self.model.graph[self]]
+        else:
+            return []
 
     @property
     def unconnected_ids(self):
@@ -310,7 +313,7 @@ class Member(Agent):
         description: creates a list of ids that the agent is not connected to in the
         social network
         """
-        return [id for id in self.model.graph.nodes if (id not in self.socials_ids + [self.unique_id])]
+        return [id for id in self.model.graph.nodes if (id not in self.socials_ids + [self])]
 
     def new_social(self):
         """
@@ -329,7 +332,7 @@ class Member(Agent):
         pot_make_ids = np.random.choice(self.unconnected_ids, size=n_potentials, replace=False)
 
         # get agents from model.schedule with the id's from the pot_make_ids
-        pot_makes = [social for social in self.model.schedule.agents if social.unique_id in pot_make_ids]
+        pot_makes = [social for social in self.model.schedule.agents if social in pot_make_ids]
 
         for potential in pot_makes:
             self.consider_connection(potential, method="ADD")
@@ -342,6 +345,9 @@ class Member(Agent):
         # determine how large the pool of potential candidates is, depending on
         # how many unconnected nodes are left or how many edges we want to max
         # add per step
+        if not self.socials_ids:
+            return
+
         if len(self.socials_ids) < self.model.edges_per_step:
             n_potentials = len(self.socials_ids)
         else:
@@ -351,7 +357,7 @@ class Member(Agent):
         pot_break_ids = np.random.choice(self.socials_ids, size=n_potentials, replace=False)
 
         # get agents from model.schedule with the id's from the pot_break_ids
-        pot_breaks = [social for social in self.model.schedule.agents if social.unique_id in pot_break_ids]
+        pot_breaks = [social for social in self.model.schedule.agents if social in pot_break_ids]
 
         for potential in pot_breaks:
             self.consider_connection(potential, method="REMOVE")
@@ -368,12 +374,11 @@ class Member(Agent):
 
         if method == "ADD":
             if p_ij > random.random():
-                self.model.graph.add_edge(self.unique_id, partner.unique_id)
-                #print("connection added")
+                self.model.graph.add_edge(self, partner)
 
         if method == "REMOVE":
             if p_ij < random.random():
-                self.model.graph.remove_edge(self.unique_id, partner.unique_id)
+                self.model.graph.remove_edge(self, partner)
 
 
     def update_pp(self):

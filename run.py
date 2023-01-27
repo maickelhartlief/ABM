@@ -59,7 +59,8 @@ for idx in range(params.n_agents):
                            social = characteristics[idx, 7],
                            ses = random.randint(1, 3)))
 
-
+# nx.draw(model.graph)
+# plt.show()
 ## run simulation
 
 # for i in range(1000):
