@@ -91,13 +91,8 @@ class Member(Agent):
         # initial settings for contacts and time spent in location
         self.move_community()
 
-<<<<<<< HEAD
         if self.model.network == "homophily":
             # initialize social connections homophilysed on similarity
-=======
-        if self.model.network == "ba":
-            # initialize social connections based on similarity
->>>>>>> 3625adc9820cdd2ab6249f1249b5a968e90463ef
             self.new_social()
             self.remove_social()
 

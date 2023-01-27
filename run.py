@@ -17,7 +17,6 @@ import seaborn as sns
 ## import parameter configuration from file (default: configs.normal)
 params = import_module('configs.' + ('normal' if len(sys.argv) < 2 else sys.argv[1]))
 
-
 ## create model
 model = Party_model(prob_stimulus = params.prob_stimulus,
                     prob_interaction = params.prob_interaction,
@@ -92,7 +91,6 @@ for iteration in range(params.n_iterations):
 
 agent_data = model.datacollector.get_agent_vars_dataframe()
 model_data = model.datacollector.get_model_vars_dataframe()
-
 ## visualize results
 result_path = 'results'
 if not os.path.exists(result_path):
@@ -100,22 +98,23 @@ if not os.path.exists(result_path):
 result_path += '/'
 
 # plots network structure
-nx.draw(model.graph)
-plt.savefig(f"{result_path}network_{model.network}.png")    
+nx.draw(model.graph, node_size = 10)
+plt.savefig(f"{result_path}network_{model.network}.png")
 plt.clf()
 
 # plot the number of voters over time
 sns.lineplot(data = model_data,
              x = model_data.index,
              y = 'voters')
-plt.savefig(f"{result_path}voters_{model.network}.png")             
+plt.savefig(f"{result_path}voters_{model.network}.png")
 plt.clf()
 
 # plot the mean political participation over time
 sns.lineplot(data = agent_data.groupby("Step").mean(),
              x = 'Step',
              y = 'political participation')
-plt.savefig(f"{result_path}mean_pp_{model.network}.png")             
+plt.ylim(0,12)
+plt.savefig(f"{result_path}mean_pp_{model.network}.png")
 plt.clf()
 
 # plot number of agents with certain level of political participation over time
@@ -146,3 +145,12 @@ for pps, label, color in zip(pps_aggr, labels, colors):
 plt.legend()
 plt.savefig(f"{result_path}agents_per_pp_aggr_network_{model.network}.png")
 plt.clf()
+
+# TODO this isnt finished yet i'm struggling lol
+# data saving
+# with open(f'{result_path}results_{model.network}.txt', 'w') as f:
+#     f.write(f'vote percent: {model_data["voters"].iloc[-1000:-1].mean()}\n')
+#     f.write(f'(Apathetic: {agent_data["political participation"].iloc[-1000:-1].count()}')
+# final voter %
+#
+# categories pps

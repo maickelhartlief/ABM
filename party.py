@@ -29,7 +29,7 @@ class Party_model(Model):
                  prob_friend,
                  until_eligible,
                  characteristics_affected,
-                 network = 'ba',
+                 network = 'homophily',
                  edges_per_step = 1,
                  n_agents = 100,
                  m_barabasi = 5,
@@ -75,6 +75,8 @@ class Party_model(Model):
         # create network
         if network == 'fully_connected':
             self.graph = nx.complete_graph(n = n_agents)
+        elif network == "holme_kim":
+            self.graph = nx.powerlaw_cluster_graph(n = n_agents, m = m_barabasi, p = 1)
         elif network == 'homophily':
             #self.graph = nx.barabasi_albert_graph(n = n_agents, m = m_barabasi)
             self.graph = nx.Graph()
@@ -110,5 +112,4 @@ class Party_model(Model):
 
 
     def get_voters(self):
-        # TODO shouldn't this be 1?
         return len([True for agent in self.agents if agent.pps >= 2])
