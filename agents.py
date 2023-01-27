@@ -17,9 +17,6 @@ from mesa import Agent, Model, space, time,  DataCollector
 import networkx as nx
 
 
-dont_interact = 0
-interact = 0
-
 class Member(Agent):
     '''
     description: an Agent object represents a person in a community that has a political
