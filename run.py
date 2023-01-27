@@ -93,7 +93,6 @@ for iteration in range(params.n_iterations):
 agent_data = model.datacollector.get_agent_vars_dataframe()
 model_data = model.datacollector.get_model_vars_dataframe()
 
-
 ## visualize results
 result_path = 'results'
 if not os.path.exists(result_path):
@@ -102,21 +101,21 @@ result_path += '/'
 
 # plots network structure
 nx.draw(model.graph)
-plt.savefig(result_path + 'network.png')
+plt.savefig(f"{result_path}network_{model.network}.png")    
 plt.clf()
 
 # plot the number of voters over time
 sns.lineplot(data = model_data,
              x = model_data.index,
              y = 'voters')
-plt.savefig(result_path + 'voters.png')
+plt.savefig(f"{result_path}voters_{model.network}.png")             
 plt.clf()
 
 # plot the mean political participation over time
 sns.lineplot(data = agent_data.groupby("Step").mean(),
              x = 'Step',
              y = 'political participation')
-plt.savefig(result_path + 'mean_pp.png')
+plt.savefig(f"{result_path}mean_pp_{model.network}.png")             
 plt.clf()
 
 # plot number of agents with certain level of political participation over time
@@ -127,7 +126,7 @@ for pp in range(13):
                  label = pp)
 
 plt.legend()
-plt.savefig(result_path + 'agents_per_pp.png')
+plt.savefig(f"{result_path}agents_per_pp.png_{model.network}.png")
 plt.clf()
 
 # # plot number of agents within certain ranges of political participation over time
@@ -145,5 +144,5 @@ for pps, label, color in zip(pps_aggr, labels, colors):
                  label = label,
                  color = color)
 plt.legend()
-plt.savefig(result_path + 'agents_per_pp_aggr.png')
+plt.savefig(f"{result_path}agents_per_pp_aggr_network_{model.network}.png")
 plt.clf()

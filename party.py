@@ -29,7 +29,7 @@ class Party_model(Model):
                  prob_friend,
                  until_eligible,
                  characteristics_affected,
-                 network = 'fully_connected',
+                 network = 'ba',
                  edges_per_step = 1,
                  n_agents = 100,
                  m_barabasi = 5,
@@ -58,6 +58,7 @@ class Party_model(Model):
         self.fermi_alpha = fermi_alpha
         self.fermi_b = fermi_b
         self.dynamic = dynamic
+        self.network = network
 
         self.schedule = time.RandomActivation(self)
         self.time = 0
