@@ -29,7 +29,7 @@ class Party_model(Model):
                  prob_friend,
                  until_eligible,
                  characteristics_affected,
-                 network = 'fully_connected',
+                 network = 'ba',
                  edges_per_step = 1,
                  n_agents = 100,
                  m_barabasi = 5,
@@ -53,10 +53,12 @@ class Party_model(Model):
         self.characteristics_affected = characteristics_affected
         self.edges_per_step = edges_per_step
         self.n_agents = n_agents
+        self.network = network
 
         self.fermi_alpha = fermi_alpha
         self.fermi_b = fermi_b
         self.dynamic = dynamic
+        self.network = network
 
         self.schedule = time.RandomActivation(self)
         self.time = 0
@@ -73,8 +75,9 @@ class Party_model(Model):
         # create network
         if network == 'fully_connected':
             self.graph = nx.complete_graph(n = n_agents)
-        elif network == 'ba':
-            self.graph = nx.barabasi_albert_graph(n = n_agents, m = m_barabasi)
+        elif network == 'homophily':
+            #self.graph = nx.barabasi_albert_graph(n = n_agents, m = m_barabasi)
+            self.graph = nx.Graph()
         # self.graph = nx.Graph()
 
     def add_agent(self, agent):
@@ -87,8 +90,10 @@ class Party_model(Model):
         self.schedule.add(agent)
 
         # Attaches agent to node
-        self.graph.nodes(agent)
-
+        if self.network == "homophily":
+            self.graph.add_node(agent)
+        else:
+            self.graph = nx.relabel_nodes(self.graph, {agent.unique_id: agent})
 
 
     def step(self):
