@@ -23,19 +23,19 @@ class Party_model(Model):
     '''
 
     def __init__(self,
-                 #outer_agent,
                  prob_stimulus,
                  prob_interaction,
                  prob_move,
                  prob_friend,
                  until_eligible,
                  characteristics_affected,
+                 network = 'fully_connected',
                  edges_per_step = 1,
                  n_agents = 100,
-                 network = 'default', #Can be default, randomn of similarity
                  m_barabasi = 5,
                  fermi_alpha = 4,
-                 fermi_b = 1):
+                 fermi_b = 1,
+                 dynamic = False):
         '''
         description: initializes new Model object
         inputs:
@@ -54,25 +54,28 @@ class Party_model(Model):
         self.edges_per_step = edges_per_step
         self.n_agents = n_agents
 
-        self.network = network
-        self.m_barabasi = m_barabasi
         self.fermi_alpha = fermi_alpha
         self.fermi_b = fermi_b
+        self.dynamic = dynamic
 
         self.schedule = time.RandomActivation(self)
         self.time = 0
         self.agents = np.array([])
         self.stimulus = False
 
+        # bug fixing etc
+        self.p_accept_list = []
 
-        self.datacollector = DataCollector(model_reporters = {"voters" : lambda m : self.get_voters()}, 
+
+        self.datacollector = DataCollector(model_reporters = {"voters" : lambda m : self.get_voters()},
                                            agent_reporters = {"political participation" : "pps"})
 
-        if self.network == "default":
-            self.graph = nx.complete_graph(n=self.n_agents)
-        else:
-            self.graph = nx.barabasi_albert_graph(n=self.n_agents, m=self.m_barabasi)
-
+        # create network
+        if network == 'fully_connected':
+            self.graph = nx.complete_graph(n = n_agents)
+        elif network == 'ba':
+            self.graph = nx.barabasi_albert_graph(n = n_agents, m = m_barabasi)
+        # self.graph = nx.Graph()
 
     def add_agent(self, agent):
         '''
@@ -83,19 +86,24 @@ class Party_model(Model):
         self.agents = np.append(self.agents, agent)
         self.schedule.add(agent)
 
+        # Attaches agent to node
+        self.graph.nodes(agent)
+
+
 
     def step(self):
         '''
         description: updates environment and takes a step for each agent
         '''
-        self.time += 1 # TODO: might already be tracked in scheduler
-
         # check whether stimulus happens for all agents
         self.stimulus = random.uniform(0, 1) < self.prob_stimulus
 
-        self.datacollector.collect(self)
+        # TODO might be worth collecting after the step?
+
         self.schedule.step()
+        self.datacollector.collect(self)
 
 
     def get_voters(self):
+        # TODO shouldn't this be 1?
         return len([True for agent in self.agents if agent.pps >= 2])

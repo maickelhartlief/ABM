@@ -90,8 +90,10 @@ class Member(Agent):
         # initial settings for contacts and time spent in location
         self.move_community()
 
-        # initialize social connections based on similarity
-        self.new_social()
+        if self.model.graph == "ba":
+            # initialize social connections based on similarity
+            self.new_social()
+            self.remove_social()
 
         # initialize ppz
         self.update_pp()
@@ -107,9 +109,10 @@ class Member(Agent):
             self.interact()
 
         # Let agent make new connection and remove old according to probability
-        if random.uniform(0, 1) < self.model.prob_friend:
-            self.new_social()
-            self.remove_social()
+        if self.model.dynamic:
+            if random.uniform(0, 1) < self.model.prob_friend:
+                self.new_social()
+                self.remove_social()
 
         # move agent according to probability
         if random.uniform(0, 1) < self.model.prob_move:
@@ -191,8 +194,8 @@ class Member(Agent):
         #       the model. changing this makes the percentage of voters much more accurate.
         if self.pps < 3 and random.randint(0, 1):
             return
-        if self.social + (self.pps / 3 + 1) + self.active + random.uniform(0, 2.5) <= 10:
-            return
+        # if self.social + (self.pps / 3 + 1) + self.active + random.uniform(0, 2.5) <= 10:
+        #     return
 
         # pick interaction partner from friends
         # if len(self.socials_ids):
@@ -212,17 +215,24 @@ class Member(Agent):
         else:
             return
 
-        if path_length >= 2:
-            return
+        # if path_length >= 2:
+        #     return
 
+        # calculate probability that interaction is accepted based on path length
+        # path length 1 = 0.9, path length 2 = 0.3, path length 3 = 0.1 probability
+
+        p_accept = 1 / ( 1 + np.exp(self.model.fermi_alpha * (path_length - self.model.fermi_b)))
+
+        if p_accept < random.random():
+            return
         # check whether partner's personality would accept interaction
         # NOTE: this states that only people that are already politically active actually interact
         #       with others about politics. This seems off, and there are barely interactions in
         #       the model. changing this makes the percentage of voters much more accurate.
         if partner.pps == 0 and random.randint(0, 1):
             return
-        if partner.social + partner.active + partner.approaching + random.uniform(0, 2.5) <= 10:
-            return
+        # if partner.social + partner.active + partner.approaching + random.uniform(0, 2.5) <= 10:
+        #     return
 
         ## interact
         mod = self.interaction_modifier(partner)
@@ -354,6 +364,7 @@ class Member(Agent):
             method (str): "ADD" or "REMOVE"
         """
         p_ij = 1 / ( 1 + np.exp(self.model.fermi_alpha * (self.distance(partner) - self.model.fermi_b)))
+        # self.model.p_accept_list.append(p_ij)
 
         if method == "ADD":
             if p_ij > random.random():
