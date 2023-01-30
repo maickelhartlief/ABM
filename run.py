@@ -146,11 +146,11 @@ plt.legend()
 plt.savefig(f"{result_path}agents_per_pp_aggr_network_{model.network}.png")
 plt.clf()
 
-# TODO this isnt finished yet i'm struggling lol
-# data saving
-# with open(f'{result_path}results_{model.network}.txt', 'w') as f:
-#     f.write(f'vote percent: {model_data["voters"].iloc[-1000:-1].mean()}\n')
-#     f.write(f'(Apathetic: {agent_data["political participation"].iloc[-1000:-1].count()}')
-# final voter %
-#
-# categories pps
+# saves results
+file_aux  = open('results/{}'.format(model.network),'w')
+file_aux.write('vote percent : {:.2f}\n'.format(model_data["voters"].iloc[-1000:-1].mean()))
+file_aux.write('Apathetic: {}\n'.format((agent_data["political participation"].iloc[-100:] == 0).sum()))
+file_aux.write('Spectators: {}\n'.format(((agent_data["political participation"].iloc[-100:] >= 1) & (agent_data["political participation"].iloc[-100:] <= 4)).sum()))
+file_aux.write('Transitionals: {}\n'.format(((agent_data["political participation"].iloc[-100:] >= 5) & (agent_data["political participation"].iloc[-100:] <= 7)).sum()))
+file_aux.write('Gladiators: {}\n'.format((agent_data["political participation"].iloc[-100:] >= 8).sum()))
+file_aux.close()
