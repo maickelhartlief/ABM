@@ -154,3 +154,5 @@ file_aux.write('Spectators: {}\n'.format(((agent_data["political participation"]
 file_aux.write('Transitionals: {}\n'.format(((agent_data["political participation"].iloc[-100000:] >= 5) & (agent_data["political participation"].iloc[-100000:] <= 7)).sum()/1000))
 file_aux.write('Gladiators: {}\n'.format((agent_data["political participation"].iloc[-100000:] >= 8).sum()/1000))
 file_aux.close()
+
+nx.write_graphml(model.graph,'networks/{}.graphml'.format(model.network))
