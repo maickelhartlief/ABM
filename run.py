@@ -155,4 +155,10 @@ file_aux.write('Transitionals: {}\n'.format(((agent_data["political participatio
 file_aux.write('Gladiators: {}\n'.format((agent_data["political participation"].iloc[-100000:] >= 8).sum()/1000))
 file_aux.close()
 
+attribute_dict = {}
+for node in model.graph.nodes:
+    attribute_dict[node] = node.pps
+
+nx.set_node_attributes(model.graph, attribute_dict, 'pps')
+
 nx.write_graphml(model.graph,'networks/{}.graphml'.format(model.network))
