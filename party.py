@@ -26,10 +26,10 @@ class Party_model(Model):
                  prob_stimulus,
                  prob_interaction,
                  prob_move,
-                 prob_friend,
+                 prob_link,
                  until_eligible,
                  characteristics_affected,
-                 network = 'ba',
+                 network = 'homophily',
                  edges_per_step = 1,
                  n_agents = 100,
                  m_barabasi = 5,
@@ -48,7 +48,7 @@ class Party_model(Model):
         self.prob_stimulus = utils.set_valid(prob_stimulus, upper = 1, verbose = True, name = 'p')
         self.prob_interaction = utils.set_valid(prob_interaction, upper = 1, verbose = True, name = 'q')
         self.prob_move = utils.set_valid(prob_move, upper = 1, verbose = True, name = 'r')
-        self.prob_friend = utils.set_valid(prob_friend, upper = 1, verbose = True, name = "prob_friend")
+        self.prob_link = utils.set_valid(prob_link, upper = 1, verbose = True, name = 'linkage')
         self.until_eligible = until_eligible
         self.characteristics_affected = characteristics_affected
         self.edges_per_step = edges_per_step
@@ -59,6 +59,7 @@ class Party_model(Model):
         self.fermi_b = fermi_b
         self.dynamic = dynamic
         self.network = network
+
 
         self.schedule = time.RandomActivation(self)
         self.time = 0
@@ -75,10 +76,12 @@ class Party_model(Model):
         # create network
         if network == 'fully_connected':
             self.graph = nx.complete_graph(n = n_agents)
+        elif network == "holme_kim":
+            self.graph = nx.powerlaw_cluster_graph(n = n_agents, m = m_barabasi, p = prob_link)
         elif network == 'homophily':
-            #self.graph = nx.barabasi_albert_graph(n = n_agents, m = m_barabasi)
             self.graph = nx.Graph()
-        # self.graph = nx.Graph()
+        elif network == "not_connected":
+            self.graph = nx.Graph()
 
     def add_agent(self, agent):
         '''
@@ -90,7 +93,7 @@ class Party_model(Model):
         self.schedule.add(agent)
 
         # Attaches agent to node
-        if self.network == "homophily":
+        if (self.network == "homophily") or (self.network == "not_connected"):
             self.graph.add_node(agent)
         else:
             self.graph = nx.relabel_nodes(self.graph, {agent.unique_id: agent})
@@ -110,5 +113,4 @@ class Party_model(Model):
 
 
     def get_voters(self):
-        # TODO shouldn't this be 1?
         return len([True for agent in self.agents if agent.pps >= 2])

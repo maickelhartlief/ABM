@@ -17,12 +17,11 @@ import seaborn as sns
 ## import parameter configuration from file (default: configs.normal)
 params = import_module('configs.' + ('normal' if len(sys.argv) < 2 else sys.argv[1]))
 
-
 ## create model
 model = Party_model(prob_stimulus = params.prob_stimulus,
                     prob_interaction = params.prob_interaction,
                     prob_move = params.prob_move,
-                    prob_friend = params.prob_friend,
+                    prob_link = params.prob_link,
                     until_eligible = params.until_eligible,
                     characteristics_affected = params.characteristics_affected,
                     network = params.network,
@@ -92,7 +91,6 @@ for iteration in range(params.n_iterations):
 
 agent_data = model.datacollector.get_agent_vars_dataframe()
 model_data = model.datacollector.get_model_vars_dataframe()
-
 ## visualize results
 result_path = 'results'
 if not os.path.exists(result_path):
@@ -100,22 +98,23 @@ if not os.path.exists(result_path):
 result_path += '/'
 
 # plots network structure
-nx.draw(model.graph)
-plt.savefig(f"{result_path}network_{model.network}.png")    
+nx.draw(model.graph, node_size = 10)
+plt.savefig(f"{result_path}network_{model.network}.png")
 plt.clf()
 
 # plot the number of voters over time
 sns.lineplot(data = model_data,
              x = model_data.index,
              y = 'voters')
-plt.savefig(f"{result_path}voters_{model.network}.png")             
+plt.savefig(f"{result_path}voters_{model.network}.png")
 plt.clf()
 
 # plot the mean political participation over time
 sns.lineplot(data = agent_data.groupby("Step").mean(),
              x = 'Step',
              y = 'political participation')
-plt.savefig(f"{result_path}mean_pp_{model.network}.png")             
+plt.ylim(0,12)
+plt.savefig(f"{result_path}mean_pp_{model.network}.png")
 plt.clf()
 
 # plot number of agents with certain level of political participation over time
@@ -146,3 +145,12 @@ for pps, label, color in zip(pps_aggr, labels, colors):
 plt.legend()
 plt.savefig(f"{result_path}agents_per_pp_aggr_network_{model.network}.png")
 plt.clf()
+
+# saves results
+file_aux  = open('results/{}'.format(model.network),'w')
+file_aux.write('vote percent : {:.2f}\n'.format(model_data["voters"].iloc[-1000:-1].mean()))
+file_aux.write('Apathetic: {}\n'.format((agent_data["political participation"].iloc[-100:] == 0).sum()))
+file_aux.write('Spectators: {}\n'.format(((agent_data["political participation"].iloc[-100:] >= 1) & (agent_data["political participation"].iloc[-100:] <= 4)).sum()))
+file_aux.write('Transitionals: {}\n'.format(((agent_data["political participation"].iloc[-100:] >= 5) & (agent_data["political participation"].iloc[-100:] <= 7)).sum()))
+file_aux.write('Gladiators: {}\n'.format((agent_data["political participation"].iloc[-100:] >= 8).sum()))
+file_aux.close()
