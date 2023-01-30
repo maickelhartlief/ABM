@@ -21,7 +21,7 @@ params = import_module('configs.' + ('normal' if len(sys.argv) < 2 else sys.argv
 model = Party_model(prob_stimulus = params.prob_stimulus,
                     prob_interaction = params.prob_interaction,
                     prob_move = params.prob_move,
-                    prob_friend = params.prob_friend,
+                    prob_link = params.prob_link,
                     until_eligible = params.until_eligible,
                     characteristics_affected = params.characteristics_affected,
                     network = params.network,

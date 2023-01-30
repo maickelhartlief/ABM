@@ -13,8 +13,9 @@ edges_per_step = 100
 prob_stimulus = 1 / 8
 prob_interaction = 1 / 8
 prob_move = 1 / 260
-prob_friend = 1 / 2
+# probability that a and c are linked in holme kim; delete later if possible
+prob_link = 1/2
 m_barabasi = 2
 fermi_alpha = 4
 fermi_b = 1.8
-network = "holme_kim"#"homophily" #'fully_connected'
+network = 'fully_connected' #"not_connected"#"holme_kim"#"homophily" #'fully_connected'
