@@ -111,6 +111,7 @@ for network in params.networks:
     sns.lineplot(data = agent_data,
                  x = 'Step',
                  y = 'political participation',
+<<<<<<< HEAD
                  errorbar = 'sd')
     plt.ylim(0,12)
     plt.savefig(f"{result_path}{model.network}_mean_pp.png")
@@ -159,5 +160,14 @@ for network in params.networks:
         file.write(f"Spectators: {pp[(pp['political participation'] > 0) & (pp['political participation'] <= 4)]['AgentID'].sum()}\n")
         file.write(f"Transitionals: {pp[(pp['political participation'] > 4) & (pp['political participation'] <= 7)]['AgentID'].sum()}\n")
         file.write(f"Gladiators: {pp[pp['political participation'] > 7]['AgentID'].sum()}\n")
+
+# idk, something Arand did?
+attribute_dict = {}
+for node in model.graph.nodes:
+    attribute_dict[node] = node.pps
+
+nx.set_node_attributes(model.graph, attribute_dict, 'pps')
+
+nx.write_graphml(model.graph,'networks/{}.graphml'.format(model.network))
 
 print('Done!                ', end = '\r', flush = True)
