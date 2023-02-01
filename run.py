@@ -123,7 +123,7 @@ for pp in range(13):
                  x = 'Step',
                  y = 'political participation',
                  label = pp)
-
+plt.ylim(0, 100)
 plt.legend()
 plt.savefig(f"{result_path}agents_per_pp.png_{model.network}.png")
 plt.clf()
@@ -147,8 +147,8 @@ plt.savefig(f"{result_path}agents_per_pp_aggr_network_{model.network}.png")
 plt.clf()
 
 # saves results
-file_aux  = open('results/{}'.format(model.network),'w')
-file_aux.write('vote percent : {:.2f}\n'.format(model_data["voters"].iloc[-1000:-1].mean()))
+file_aux  = open('results/{}.txt'.format(model.network),'w')
+file_aux.write('{}\n'.format(model_data["voters"].iloc[-1000:-1].to_string(header=False, index=False)))#.mean()))
 file_aux.write('Apathetic: {}\n'.format((agent_data["political participation"].iloc[-100:] == 0).sum()))
 file_aux.write('Spectators: {}\n'.format(((agent_data["political participation"].iloc[-100:] >= 1) & (agent_data["political participation"].iloc[-100:] <= 4)).sum()))
 file_aux.write('Transitionals: {}\n'.format(((agent_data["political participation"].iloc[-100:] >= 5) & (agent_data["political participation"].iloc[-100:] <= 7)).sum()))
