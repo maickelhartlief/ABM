@@ -1,5 +1,6 @@
 # these are the tunable parameters to set the political landscape
 # used for presets in the base model
+n_runs = 10
 n_agents = 100
 n_iterations = 5000
 char_distr = 'normal' # could also be 'uniform'
@@ -18,4 +19,4 @@ prob_link = 1/2
 m_barabasi = 2
 fermi_alpha = 4
 fermi_b = 1.8
-network = "fully_connected"#"not_connected"#"holme_kim"#"homophily"#"holme_kim" #'fully_connected' #"not_connected"#"holme_kim"#"homophily" #'fully_connected'
+networks = ['not_connected', 'holme_kim', 'homophily', 'fully_connected'] #"not_connected"#"holme_kim"#"homophily" #'fully_connected'
