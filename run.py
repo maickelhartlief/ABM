@@ -68,7 +68,7 @@ for network in params.networks:
         # run model
         for iteration in range(params.n_iterations):
             model.step()
-        
+
         run_model_data = model.datacollector.get_model_vars_dataframe()
         run_agent_data = model.datacollector.get_agent_vars_dataframe()
 
@@ -85,7 +85,7 @@ for network in params.networks:
     ## Average data over runs
     #model_data = model_data.groupby('iteration').agg(['mean', 'std']).drop(columns = ['run'])
     #agent_data = agent_data.groupby(['Step', 'AgentID']).agg(['mean', 'std']).drop(columns = ['run'])
-    
+
     ## visualize results
     # set location
     result_path = 'results/' + network
@@ -155,7 +155,7 @@ for network in params.networks:
     pp = pp[pp['Step'] >= params.n_iterations - 100].groupby('political participation').mean().reset_index()[['political participation', 'AgentID']]
     with open(result_path + model.network, 'w') as file:
         file.write(model_data.groupby('Step').mean()['voters'].iloc[-1000:-1].to_string(header=False, index=False) + '\n')
-        
+
         file.write(f"Apathetic: {pp[pp['political participation'] == 0]['AgentID'].sum()}\n")
         file.write(f"Spectators: {pp[(pp['political participation'] > 0) & (pp['political participation'] <= 4)]['AgentID'].sum()}\n")
         file.write(f"Transitionals: {pp[(pp['political participation'] > 4) & (pp['political participation'] <= 7)]['AgentID'].sum()}\n")
