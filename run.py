@@ -10,7 +10,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
 from importlib import import_module
-from mesa import Agent, Model, space, time, DataCollector
+from mesa import Agent, Model, space, time
+from mesa.datacollection import DataCollector
 import networkx as nx
 import seaborn as sns
 import pandas as pd
@@ -111,7 +112,7 @@ for network in params.networks:
     sns.lineplot(data = agent_data,
                  x = 'Step',
                  y = 'political participation',
-<<<<<<< HEAD
+
                  errorbar = 'sd')
     plt.ylim(0,12)
     plt.savefig(f"{result_path}{model.network}_mean_pp.png")
