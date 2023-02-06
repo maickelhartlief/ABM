@@ -3,6 +3,7 @@ from party import Party_model
 from political_participation import PPmodel
 
 # external imports
+import os
 from IPython.display import clear_output
 from mesa.batchrunner import BatchRunner
 import pandas as pd
@@ -42,6 +43,7 @@ for i, var in enumerate(problem['names']):
     
     data[var] = batch.get_model_vars_dataframe()
 
+# Print and save data in excell
 print(data)
 df_stimulus = pd.DataFrame.from_dict(data['prob_stimulus'])
 df_interaction = pd.DataFrame.from_dict(data['prob_interaction'])
@@ -84,11 +86,19 @@ def plot_all_vars(df, param):
         param: the parameter to be plotted
     """
 
-    f, axs = plt.subplots(3, figsize=(7, 10))
+    f, axs = plt.subplots(4, sharex=False, figsize=(7, 10))
+    f.tight_layout()
     
     for i, var in enumerate(problem['names']):
         plot_param_var_conf(axs[i], data[var], var, param, i)
 
-for param in ("voters"):
-    plot_all_vars(data, param)
-    plt.show()
+## visualize results
+# set location
+result_path = 'results'
+if not os.path.exists(result_path):
+   os.makedirs(result_path)
+result_path += '/'
+
+plot_all_vars(data, 'voters') 
+plt.savefig(f"{result_path}OFAT.png")
+plt.show()
