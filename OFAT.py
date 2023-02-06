@@ -18,9 +18,9 @@ problem = {
 }
 
 # Set the repetitions, the amount of steps, and the amount of distinct values per variable
-replicates = 2
-max_steps = 2
-distinct_samples = 2
+replicates = 10
+max_steps = 5000
+distinct_samples = 10
 
 # Set the outputs
 model_reporters = {"voters": lambda m: m.schedule.get_voters()}
