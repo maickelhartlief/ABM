@@ -19,4 +19,5 @@ prob_link = 1/2
 m_barabasi = 2
 fermi_alpha = 4
 fermi_b = 1.8
-networks = 'homophily' #"not_connected"#"holme_kim"#"homophily" #'fully_connected'
+#networks = 'homophily' #"not_connected"#"holme_kim"#"homophily" #'fully_connected'
+networks = "not_connected"
