@@ -111,7 +111,6 @@ for network in params.networks:
     sns.lineplot(data = agent_data,
                  x = 'Step',
                  y = 'political participation',
-<<<<<<< HEAD
                  errorbar = 'sd')
     plt.ylim(0,12)
     plt.savefig(f"{result_path}{model.network}_mean_pp.png")

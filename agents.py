@@ -206,17 +206,11 @@ class Member(Agent):
         while partner == self:
             partner = random.choice(self.model.agents)
 
-        # TODO indexing doesn't work
-        # @Do: If you want to do this just use partner.unique_id instead of self.model.graph[partner.unique_id]
-
         # path length
         if nx.has_path(self.model.graph, self, partner):
             path_length = nx.shortest_path_length(self.model.graph, self, partner)
         else:
             return
-
-        # if path_length >= 2:
-        #     return
 
         # calculate probability that interaction is accepted based on path length
         # path length 1 = 0.9, path length 2 = 0.3, path length 3 = 0.1 probability

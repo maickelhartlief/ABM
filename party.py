@@ -66,10 +66,6 @@ class Party_model(Model):
         self.agents = np.array([])
         self.stimulus = False
 
-        # bug fixing etc
-        self.p_accept_list = []
-
-
         self.datacollector = DataCollector(model_reporters = {"voters" : lambda m : self.get_voters()},
                                            agent_reporters = {"political participation" : "pps"})
 
