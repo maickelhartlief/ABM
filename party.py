@@ -35,7 +35,8 @@ class Party_model(Model):
                  m_barabasi = 5,
                  fermi_alpha = 4,
                  fermi_b = 1,
-                 dynamic = False):
+                 dynamic = False,
+                 graph=nx.Graph()):
         '''
         description: initializes new Model object
         inputs:
@@ -54,7 +55,7 @@ class Party_model(Model):
         self.edges_per_step = edges_per_step
         self.n_agents = n_agents
         self.network = network
-
+        self.graph = nx.Graph()
         self.fermi_alpha = fermi_alpha
         self.fermi_b = fermi_b
         self.dynamic = dynamic

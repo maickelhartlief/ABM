@@ -10,7 +10,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
 from importlib import import_module
-from mesa import Agent, Model, space, time, DataCollector
+from mesa import Agent, Model, space, time
+from mesa.datacollection import DataCollector
 import networkx as nx
 import seaborn as sns
 import pandas as pd
@@ -160,13 +161,23 @@ for network in params.networks:
         file.write(f"Transitionals: {pp[(pp['political participation'] > 4) & (pp['political participation'] <= 7)]['AgentID'].sum()}\n")
         file.write(f"Gladiators: {pp[pp['political participation'] > 7]['AgentID'].sum()}\n")
 
-# idk, something Arand did?
-attribute_dict = {}
+pps_dict = {}
+category_dict = {}
 for node in model.graph.nodes:
-    attribute_dict[node] = node.pps
+    pps = node.pps
+    print(pps)
+    if pps == 0:
+        category_dict[node] = 0
+    elif pps >= 1 and pps <= 4:
+        category_dict[node] = 1
+    elif pps >= 5 and pps <=7:
+        category_dict[node] = 2
+    else:
+        category_dict[node] = 3
+    pps_dict[node] = node.pps
 
-nx.set_node_attributes(model.graph, attribute_dict, 'pps')
-
+nx.set_node_attributes(model.graph, pps_dict, 'pps')
+nx.set_node_attributes(model.graph, category_dict, 'cat')
 nx.write_graphml(model.graph,'networks/{}.graphml'.format(model.network))
 
 print('Done!                ', end = '\r', flush = True)

@@ -13,7 +13,8 @@ from utils import set_valid, distance_normalizer
 
 import numpy as np
 import random
-from mesa import Agent, Model, space, time,  DataCollector
+from mesa import Agent, Model, space, time
+from mesa.datacollection import DataCollector
 import networkx as nx
 
 
