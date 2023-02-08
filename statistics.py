@@ -30,6 +30,7 @@ for condition in conditions:
 
     # Convert values to float
     floats = list(map(float, lines[:-4]))
+    print(f"For {condition}, the mean is {np.mean(floats):.3f} with SD {np.std(floats):.3f}")
     # Save all the values for the voter data, i.e. all except the last 4 lines, in a dict
     voter_dict[condition] = floats#[:-4]
 
@@ -44,6 +45,10 @@ for condition in conditions:
         # Convert list to float and then to int to strip of additional characters
         nr_list.append(float(nr))
     nr_per_cat.append(nr_list)
+
+# Descriptives
+contig_table = pd.DataFrame(nr_per_cat, columns = cat_list, index = conditions)
+print(f"The number of agents per category is: \n {contig_table}")
 
 # ANOVA
 if (stats.levene(*list(voter_dict.values())).pvalue) <= 0.05:
