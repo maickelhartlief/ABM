@@ -83,15 +83,14 @@ for index, cond_1 in enumerate(nr_per_cat):
 print(f"A pairwise comparison of the groups reveals the following: \n{posthoc_chi}")
 
 # Visualisation: stacked bar chart
-apathetic = []
-spectators = []
-transitionals = []
-gladiators = []
-for nr_list in nr_per_cat:
-    apathetic.append(int(nr_list[0]))
-    spectators.append(int(nr_list[1]))
-    transitionals.append(int(nr_list[2]))
-    gladiators.append(int(nr_list[3]))
+def reform_list(nr_per_cat, idx):
+    return [int(nr_list[idx]) for nr_list in nr_per_cat]
+
+apathetic = reform_list(nr_per_cat, 0)
+spectators = reform_list(nr_per_cat, 1)
+transitionals = reform_list(nr_per_cat, 2)
+gladiators = reform_list(nr_per_cat, 3)
+
 plt.bar(conditions, apathetic, color = "tan")
 plt.bar(conditions, spectators, bottom = apathetic, color = "orange" )
 spec_apath = np.add(spectators, apathetic).tolist()
