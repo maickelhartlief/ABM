@@ -1,4 +1,3 @@
-#from political_participation import PPmodel
 from party import Party_model
 
 import SALib
@@ -26,29 +25,27 @@ problem = {
 # Set the outputs
 model_reporters = {"voters" : lambda m : m.get_voters()}
 
-# We get all our samples here
-param_values = saltelli.sample(problem, distinct_samples, calc_second_order=False)
+# Get all samples
+param_values = saltelli.sample(problem, distinct_samples, calc_second_order = False)
 
 # READ NOTE BELOW CODE
 batch = BatchRunner(Party_model, 
                     max_steps = max_steps,
-                    variable_parameters = {name:[] for name in problem['names']},
+                    variable_parameters = {name : [] for name in problem['names']},
                     model_reporters = model_reporters)
 
 count = 0
-data = pd.DataFrame(index = range(replicates*len(param_values)), 
+data = pd.DataFrame(index = range(replicates * len(param_values)), 
                     columns = ['prob_stimulus', 'prob_interaction', 'prob_move', 'prob_link'])
-data['Run'], data['voters'] = None, None
+data['Run'], data['voters'] = np.nan, np.nan
 
 for i in range(replicates):
     for vals in param_values: 
         # Change parameters that should be integers
         vals = list(vals)
         # Transform to dict with parameter names and their values
-        variable_parameters = {}
-        for name, val in zip(problem['names'], vals):
-            variable_parameters[name] = val
-
+        variable_parameters = {name : val for name, val in zip(problem['names'], vals)}
+        
         batch.run_iteration(variable_parameters, tuple(vals), count)
         iteration_data = batch.get_model_vars_dataframe().iloc[count]
         iteration_data['Run'] = count # Don't know what causes this, but iteration number is not correctly filled

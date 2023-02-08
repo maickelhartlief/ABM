@@ -32,17 +32,8 @@ class Party_model(Model):
                  prob_interaction,
                  prob_move,
                  prob_link,
-                 #until_eligible,
-                 #characteristics_affected,
-                 #network = 'homophily',
-                 #edges_per_step = 1,
-                 #n_agents = 100,
-                 #m_barabasi = 5,
-                 #fermi_alpha = 4,
-                 #fermi_b = 1,
-                 dynamic = False):
-                 #n_runs = 1,
-                 #char_distr = 'normal'):
+                 dynamic = False,
+                 params = None):
         '''
         description: initializes new Model object
         inputs:
@@ -53,7 +44,8 @@ class Party_model(Model):
             - characteristics_affected = dictionary of effect of stimulus on agent
         '''
         self.description = 'A model for testing.'
-        params = import_module('configs.' + ('normal' if len(sys.argv) < 2 else sys.argv[1]))
+        if params is None:
+            params = import_module('configs.' + ('normal' if len(sys.argv) < 2 else sys.argv[1]))
         
         self.n_runs = params.n_runs
         self.char_distr = params.char_distr
@@ -65,11 +57,10 @@ class Party_model(Model):
         self.characteristics_affected = params.characteristics_affected
         self.edges_per_step = params.edges_per_step
         self.n_agents = params.n_agents
-        self.network = params.network
         self.fermi_alpha = params.fermi_alpha
         self.fermi_b = params.fermi_b
         self.dynamic = dynamic
-        self.network = params.network
+        self.network = params.networks[0]
 
         self.schedule = time.RandomActivation(self)
         self.time = 0

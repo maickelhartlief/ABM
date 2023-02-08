@@ -30,41 +30,7 @@ for network in params.networks:
                             prob_interaction = params.prob_interaction,
                             prob_move = params.prob_move,
                             prob_link = params.prob_link,
-                            until_eligible = params.until_eligible,
-                            characteristics_affected = params.characteristics_affected,
-                            network = network,
-                            edges_per_step = params.edges_per_step,
-                            n_agents = params.n_agents,
-                            m_barabasi = params.m_barabasi,
-                            fermi_alpha = params.fermi_alpha,
-                            fermi_b = params.fermi_b)
-
-        ## create agents
-        # generate random starting characteristics, based on desired distribution
-        if params.char_distr == 'normal': # truncated normal distribution, to stay within limits
-            mu = 2
-            distr = stats.truncnorm(-mu, mu, loc = mu, scale = 1)
-            samples = distr.rvs(params.n_agents * 8)
-            characteristics = np.reshape(samples, (params.n_agents, 8))
-        elif params.char_distr == 'uniform': # uniform distribution within limits
-            characteristics = np.random.uniform(1, 5, (params.n_agents, 8))
-
-        # intialize each agent
-        for idx in range(params.n_agents):
-            model.add_agent(Member(idx,
-                                   model,
-                                   # NOTE: This was a flat 20% probability, butit is more natural to make this chance related to prob_move.
-                                   until_eligible = 0 if random.uniform(0, 1) > params.prob_move else params.until_eligible,
-                                   vote_duty = random.uniform(0, 1) < .03,
-                                   active = characteristics[idx, 0],
-                                   overt = characteristics[idx, 1],
-                                   autonomous = characteristics[idx, 2],
-                                   approaching = characteristics[idx, 3],
-                                   continuous = characteristics[idx, 4],
-                                   outtaking = characteristics[idx, 5],
-                                   expressive = characteristics[idx, 6],
-                                   social = characteristics[idx, 7],
-                                   ses = random.randint(1, 3)))
+                            params = params)
 
         # run model
         for iteration in range(params.n_iterations):
