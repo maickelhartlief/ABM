@@ -83,10 +83,10 @@ spectators = []
 transitionals = []
 gladiators = []
 for nr_list in nr_per_cat:
-    apathetic.append(nr_list[0])
-    spectators.append(nr_list[1])
-    transitionals.append(nr_list[2])
-    gladiators.append(nr_list[3])
+    apathetic.append(int(nr_list[0]))
+    spectators.append(int(nr_list[1]))
+    transitionals.append(int(nr_list[2]))
+    gladiators.append(int(nr_list[3]))
 plt.bar(conditions, apathetic, color = "tan")
 plt.bar(conditions, spectators, bottom = apathetic, color = "orange" )
 spec_apath = np.add(spectators, apathetic).tolist()
