@@ -1,3 +1,9 @@
+###### normal.py
+# A configuration file with hyperparameters. Alternatives can easily be made by copying 
+# this code to another file in the same folder and calling run.py with the name of that 
+# file as an input variable
+####
+
 # these are the tunable parameters to set the political landscape
 # used for presets in the base model
 n_runs = 10
@@ -20,4 +26,4 @@ m_barabasi = 2
 fermi_alpha = 4
 fermi_b = 1.8
 #networks = 'homophily' #"not_connected"#"holme_kim"#"homophily" #'fully_connected'
-networks = ["fully_connected"]
+networks = ["holme_kim"]

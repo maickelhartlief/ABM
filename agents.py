@@ -1,16 +1,11 @@
-'''
-TODO:
-- meaning of global/local community:
-  it seemse like the base model only looks at 1 local community,
-  which now means that a person moving always takes the exact
-  same characteristics as the previous owner of that house.
-  this seems odd.
-- implement more analysis
-- add voters per iteration as model level data collection
-'''
+###### agents.py
+# 
+####
 
+# Internal imports
 from utils import set_valid, distance_normalizer
 
+# External imports
 import numpy as np
 import random
 from mesa import Agent, Model, space, time

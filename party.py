@@ -1,6 +1,12 @@
+###### party.py
+# 
+####
+
+# Internal imports
 import utils
 from agents import Member
 
+# External imports
 import numpy as np
 import random
 from mesa import Agent, Model, space, time
@@ -57,6 +63,7 @@ class Party_model(Model):
         self.characteristics_affected = params.characteristics_affected
         self.edges_per_step = params.edges_per_step
         self.n_agents = params.n_agents
+        self.m_barabasi = params.m_barabasi
         self.fermi_alpha = params.fermi_alpha
         self.fermi_b = params.fermi_b
         self.dynamic = dynamic

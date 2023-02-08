@@ -1,8 +1,13 @@
-# internal imports
+###### run.py
+# Runs the model for a certain number of runs and iterations, and for all network 
+# types specified in the config function (config/normal.py by default)
+####
+
+# Internal imports
 from party import Party_model
 from agents import Member
 
-# external imports
+# External imports
 import sys
 import os
 import random
@@ -15,6 +20,7 @@ from mesa.datacollection import DataCollector
 import networkx as nx
 import seaborn as sns
 import pandas as pd
+
 
 ## import parameter configuration from file (default: configs.normal)
 params = import_module('configs.' + ('normal' if len(sys.argv) < 2 else sys.argv[1]))

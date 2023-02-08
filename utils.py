@@ -1,4 +1,11 @@
+###### utils.py
+# Contains some extra statis functions used in the program
+####
+
+# External imports
 from math import sqrt
+
+
 # returns closest value of param that is within bounds
 def set_valid(param, lower = 0, upper = 5, verbose = False, name = ''):
     '''

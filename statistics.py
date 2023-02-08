@@ -1,3 +1,8 @@
+###### statistics.py
+# 
+####
+
+# External imports
 from scipy import stats
 import pandas as pd
 import matplotlib.pyplot as plt
