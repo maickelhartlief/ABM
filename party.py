@@ -1,10 +1,14 @@
 import utils
+from agents import Member
 
 import numpy as np
 import random
 from mesa import Agent, Model, space, time
 from mesa.datacollection import DataCollector
 import networkx as nx
+from importlib import import_module
+import sys
+from scipy import stats
 
 
 class Party_model(Model):
@@ -28,16 +32,17 @@ class Party_model(Model):
                  prob_interaction,
                  prob_move,
                  prob_link,
-                 until_eligible,
-                 characteristics_affected,
-                 network = 'homophily',
-                 edges_per_step = 1,
-                 n_agents = 100,
-                 m_barabasi = 5,
-                 fermi_alpha = 4,
-                 fermi_b = 1,
-                 dynamic = False,
-                 graph=nx.Graph()):
+                 #until_eligible,
+                 #characteristics_affected,
+                 #network = 'homophily',
+                 #edges_per_step = 1,
+                 #n_agents = 100,
+                 #m_barabasi = 5,
+                 #fermi_alpha = 4,
+                 #fermi_b = 1,
+                 dynamic = False):
+                 #n_runs = 1,
+                 #char_distr = 'normal'):
         '''
         description: initializes new Model object
         inputs:
@@ -47,21 +52,24 @@ class Party_model(Model):
             - until_eligible = steps needed for new agents to be allowed to vote,
             - characteristics_affected = dictionary of effect of stimulus on agent
         '''
+        self.description = 'A model for testing.'
+        params = import_module('configs.' + ('normal' if len(sys.argv) < 2 else sys.argv[1]))
+        
+        self.n_runs = params.n_runs
+        self.char_distr = params.char_distr
         self.prob_stimulus = utils.set_valid(prob_stimulus, upper = 1, verbose = True, name = 'p')
         self.prob_interaction = utils.set_valid(prob_interaction, upper = 1, verbose = True, name = 'q')
         self.prob_move = utils.set_valid(prob_move, upper = 1, verbose = True, name = 'r')
         self.prob_link = utils.set_valid(prob_link, upper = 1, verbose = True, name = 'linkage')
-        self.until_eligible = until_eligible
-        self.characteristics_affected = characteristics_affected
-        self.edges_per_step = edges_per_step
-        self.n_agents = n_agents
-        self.network = network
-        self.graph = nx.Graph()
-        self.fermi_alpha = fermi_alpha
-        self.fermi_b = fermi_b
+        self.until_eligible = params.until_eligible
+        self.characteristics_affected = params.characteristics_affected
+        self.edges_per_step = params.edges_per_step
+        self.n_agents = params.n_agents
+        self.network = params.network
+        self.fermi_alpha = params.fermi_alpha
+        self.fermi_b = params.fermi_b
         self.dynamic = dynamic
-        self.network = network
-
+        self.network = params.network
 
         self.schedule = time.RandomActivation(self)
         self.time = 0
@@ -72,14 +80,20 @@ class Party_model(Model):
                                            agent_reporters = {"political participation" : "pps"})
 
         # create network
-        if network == 'fully_connected':
-            self.graph = nx.complete_graph(n = n_agents)
-        elif network == "holme_kim":
-            self.graph = nx.powerlaw_cluster_graph(n = n_agents, m = m_barabasi, p = prob_link)
-        elif network == 'homophily':
+        self.graph = None
+        if self.network == 'fully_connected':
+            self.graph = nx.complete_graph(n = self.n_agents)
+        elif self.network == "holme_kim":
+            self.graph = nx.powerlaw_cluster_graph(n = self.n_agents, m = self.m_barabasi, p = prob_link)
+        elif self.network == 'homophily':
             self.graph = nx.Graph()
-        elif network == "not_connected":
+        elif self.network == "not_connected":
             self.graph = nx.Graph()
+
+
+        self.init_agents()
+        self.running = True
+        self.datacollector.collect(self)
 
     def add_agent(self, agent):
         '''
@@ -96,6 +110,34 @@ class Party_model(Model):
         else:
             self.graph = nx.relabel_nodes(self.graph, {agent.unique_id: agent})
 
+    def init_agents(self):
+        # Create agent characteristics:
+        if self.char_distr == 'normal': # truncated normal distribution, to stay within limits
+            mu = 2
+            distr = stats.truncnorm(-mu, mu, loc = mu, scale = 1)
+            samples = distr.rvs(self.n_agents * 8)
+            characteristics = np.reshape(samples, (self.n_agents, 8))
+        elif self.char_distr == 'uniform': # uniform distribution within limits
+            characteristics = np.random.uniform(1, 5, (self.n_agents, 8))
+
+        # intialize each agent
+        for idx in range(self.n_agents):
+            agent = Member(idx,
+                        self,
+                        # NOTE: This was a flat 20% probability, butit is more natural to make this chance related to prob_move.
+                        until_eligible = 0 if random.uniform(0, 1) > self.prob_move else self.until_eligible,
+                        vote_duty = random.uniform(0, 1) < .03,
+                        active = characteristics[idx, 0],
+                        overt = characteristics[idx, 1],
+                        autonomous = characteristics[idx, 2],
+                        approaching = characteristics[idx, 3],
+                        continuous = characteristics[idx, 4],
+                        outtaking = characteristics[idx, 5],
+                        expressive = characteristics[idx, 6],
+                        social = characteristics[idx, 7],
+                        ses = random.randint(1, 3))
+            self.add_agent(agent)
+
 
     def step(self):
         '''
@@ -105,7 +147,6 @@ class Party_model(Model):
         self.stimulus = random.uniform(0, 1) < self.prob_stimulus
 
         # TODO might be worth collecting after the step?
-
         self.schedule.step()
         self.datacollector.collect(self)
 

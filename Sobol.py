@@ -1,4 +1,6 @@
-from political_participation import PPmodel
+#from political_participation import PPmodel
+from party import Party_model
+
 import SALib
 from SALib.sample import saltelli
 import pandas as pd
@@ -22,20 +24,20 @@ problem = {
 }
 
 # Set the outputs
-model_reporters = {"voters": lambda m: m.schedule.get_voters()}
+model_reporters = {"voters" : lambda m : m.get_voters()}
 
 # We get all our samples here
 param_values = saltelli.sample(problem, distinct_samples, calc_second_order=False)
 
 # READ NOTE BELOW CODE
-batch = BatchRunner(PPmodel, 
-                    max_steps=max_steps,
-                    variable_parameters={name:[] for name in problem['names']},
-                    model_reporters=model_reporters)
+batch = BatchRunner(Party_model, 
+                    max_steps = max_steps,
+                    variable_parameters = {name:[] for name in problem['names']},
+                    model_reporters = model_reporters)
 
 count = 0
-data = pd.DataFrame(index=range(replicates*len(param_values)), 
-                                columns=['prob_stimulus', 'prob_interaction', 'prob_move', 'prob_link'])
+data = pd.DataFrame(index = range(replicates*len(param_values)), 
+                    columns = ['prob_stimulus', 'prob_interaction', 'prob_move', 'prob_link'])
 data['Run'], data['voters'] = None, None
 
 for i in range(replicates):
@@ -55,7 +57,7 @@ for i in range(replicates):
         count += 1
 
         clear_output()
-        print(f'{count / (len(param_values) * (replicates)) * 100:.2f}% done')
+        print(f'{count / (len(param_values) * (replicates)) * 100:.2f}% done', end = '\r', flush = True)
 
 print(data)
 
