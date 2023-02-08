@@ -1,35 +1,46 @@
 from scipy import stats
 import pandas as pd
-import os
 import matplotlib.pyplot as plt
 import scikit_posthocs as sp
+import numpy as np
 
-# VOTER PRECENTAGE: ANOVA
-#os.chdir("results/")
-voter_dict = {}
-cond_cat_dict = {}
+# List of condition names to loop over
 conditions = ["not_connected",  "holme_kim", "homophily","fully_connected"]
-# result_path = 'results/' + network
-#     if not os.path.exists(result_path):
-#        os.makedirs(result_path)
-#     result_path += '/'
+
+# Initialize dictionary with voter percentages per condition
+voter_dict = {}
+
+# List of categories for the chi square test
 cat_list = []
+
+# List of list of number of agents in each category per condition
 nr_per_cat = []
+
+# Loop over all result files
 for condition in conditions:
     file = f'results/{condition}/{condition}'
-    df = pd.read_table(file, delim_whitespace=True, engine = "python", header = None, skipfooter = 4)
-    voter_dict[condition]  = df.iloc[:, 0].values.tolist()
-    nr_list = []
-    with open(file, 'r') as f:
-        for line in (f.readlines() [-4:]):
-            cat, nr = line.split(":")
-            if cat not in cat_list:
-                cat_list.append(cat)
-            nr_list.append(float(nr))
 
+    # Make a list of every line
+    lines = open(file).read().splitlines()
+
+    # Convert values to float
+    floats = list(map(float, lines[:-4]))
+    # Save all the values for the voter data, i.e. all except the last 4 lines, in a dict
+    voter_dict[condition] = floats#[:-4]
+
+    # Save the data for the 4 categories of political participation
+    nr_list = []
+    for line in lines[-4:]:
+        cat, nr = line.split(":")
+
+        # List of categories for the chi square test
+        if cat not in cat_list:
+            cat_list.append(cat)
+        # Convert list to float and then to int to strip of additional characters
+        nr_list.append(float(nr))
     nr_per_cat.append(nr_list)
 
-
+# ANOVA
 if (stats.levene(*list(voter_dict.values())).pvalue) <= 0.05:
     # For unequally distributed variances
     print(f"The assumption of equality of variances was not met; {stats.levene(*list(voter_dict.values())).pvalue} \n"
@@ -42,7 +53,6 @@ else:
     print(f"The assumption of equality of variances was met.\n"
     f"Therefore, the results of the ANOVA test were: {stats.f_oneway(*list(voter_dict.values()))} \n"
     f"The results of the post-hoc are the following: _")#{sp.posthoc_dunn(*list(voter_dict.values())), p_adjust = 'bonferroni'}")
-    # TODO there should be a post hoc test here as well
 
 
 fig = plt.figure(figsize = (10, 10))
@@ -68,3 +78,21 @@ for index, cond_1 in enumerate(nr_per_cat):
 print(f"A pairwise comparison of the groups reveals the following: \n{posthoc_chi}")
 
 # Visualisation: stacked bar chart
+apathetic = []
+spectators = []
+transitionals = []
+gladiators = []
+for nr_list in nr_per_cat:
+    apathetic.append(int(nr_list[0]))
+    spectators.append(int(nr_list[1]))
+    transitionals.append(int(nr_list[2]))
+    gladiators.append(int(nr_list[3]))
+plt.bar(conditions, apathetic, color = "tan")
+plt.bar(conditions, spectators, bottom = apathetic, color = "orange" )
+spec_apath = np.add(spectators, apathetic).tolist()
+plt.bar(conditions, transitionals, bottom = spec_apath, color = "pink")
+plt.bar(conditions, gladiators, bottom = np.add(spec_apath, transitionals).tolist(), color = "red")
+plt.title("Bar plot of number of agents in each political participation category")
+#plt.show()
+plt.savefig(f"results/barplot.png")
+plt.clf()
