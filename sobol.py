@@ -61,8 +61,7 @@ for _ in range(replicates):
 
         clear_output()
         print(f'{count / (len(param_values) * (replicates)) * 100:.2f}% done', end = '\r', flush = True)
-
-print(data)
+print('done!')
 
 def plot_index(s, params, i, title=''):
     """
@@ -98,6 +97,12 @@ def plot_index(s, params, i, title=''):
     plt.axvline(0, c='k')
 
 def plot_global(Si, problem):
+    # set location
+    result_path = 'results/sobol'
+    if not os.path.exists(result_path):
+       os.makedirs(result_path)
+    result_path += '/'
+
     # First order
     plot_index(Si, problem['names'], '1', 'First order sensitivity')
     plt.savefig("results/sobol/First-order-sensitivity.png")
@@ -108,5 +113,5 @@ def plot_global(Si, problem):
     plt.savefig("results/sobol/Total-order-sensitivity.png")
     plt.clf()
 
-Si_voters = sobol.analyze(problem, data['voters'].values, calc_second_order=False)
+Si_voters = sobol.analyze(problem, data['voters'].values, calc_second_order = False)
 plot_global(Si_voters, problem)

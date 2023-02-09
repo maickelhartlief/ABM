@@ -36,24 +36,22 @@ for network in params.networks:
                             prob_interaction = params.prob_interaction,
                             prob_move = params.prob_move,
                             prob_link = params.prob_link,
-                            params = params)
+                            params = params,
+                            network = network)
 
         # run model
         for iteration in range(params.n_iterations):
             model.step()
 
-        run_model_data = model.datacollector.get_model_vars_dataframe()
-        run_agent_data = model.datacollector.get_agent_vars_dataframe()
+        def safe_run_data(data, run_data):
+            run_data = run_data.reset_index().rename(columns = {'index' : 'Step'})
+            run_data['run'] = run
+            return pd.concat([data, run_data], ignore_index = True)
 
-        run_model_data = run_model_data.reset_index().rename(columns = {'index' : 'Step'})
-        run_model_data['run'] = run
-
-        run_agent_data = run_agent_data.reset_index()
-        run_agent_data['run'] = run
-
-        agent_data = pd.concat([agent_data, run_agent_data], ignore_index = True)
-        model_data = pd.concat([model_data, run_model_data], ignore_index = True)
-
+        agent_data = safe_run_data(agent_data, model.datacollector.get_agent_vars_dataframe())
+        model_data = safe_run_data(model_data, model.datacollector.get_model_vars_dataframe())
+        
+    print(agent_data)
     print('saving results ...', end = '\r', flush = True)
     ## Average data over runs
     #model_data = model_data.groupby('iteration').agg(['mean', 'std']).drop(columns = ['run'])
@@ -133,23 +131,28 @@ for network in params.networks:
         file.write(f"Transitionals: {pp[(pp['political participation'] > 4) & (pp['political participation'] <= 7)]['AgentID'].sum()}\n")
         file.write(f"Gladiators: {pp[pp['political participation'] > 7]['AgentID'].sum()}\n")
 
-pps_dict = {}
-category_dict = {}
-for node in model.graph.nodes:
-    pps = node.pps
-    print(pps)
-    if pps == 0:
-        category_dict[node] = 0
-    elif pps >= 1 and pps <= 4:
-        category_dict[node] = 1
-    elif pps >= 5 and pps <=7:
-        category_dict[node] = 2
-    else:
-        category_dict[node] = 3
-    pps_dict[node] = node.pps
+    pps_dict = {}
+    category_dict = {}
+    for node in model.graph.nodes:
+        pps = node.pps
+        if pps == 0:
+            category_dict[node] = 0
+        elif pps >= 1 and pps <= 4:
+            category_dict[node] = 1
+        elif pps >= 5 and pps <=7:
+            category_dict[node] = 2
+        else:
+            category_dict[node] = 3
+        pps_dict[node] = node.pps
 
-nx.set_node_attributes(model.graph, pps_dict, 'pps')
-nx.set_node_attributes(model.graph, category_dict, 'cat')
-nx.write_graphml(model.graph,'networks/{}.graphml'.format(model.network))
+    # set location
+    result_path = 'results/networks'
+    if not os.path.exists(result_path):
+       os.makedirs(result_path)
+    result_path += '/'
+
+    nx.set_node_attributes(model.graph, pps_dict, 'pps')
+    nx.set_node_attributes(model.graph, category_dict, 'cat')
+    nx.write_graphml(model.graph, f'{result_path}{network}.graphml')
 
 print('Done!                ', end = '\r', flush = True)

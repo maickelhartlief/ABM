@@ -4,7 +4,6 @@
 
 # internal imports
 from party import Party_model
-from political_participation import PPmodel
 
 # external imports
 import os
@@ -28,20 +27,20 @@ max_steps = 5000
 distinct_samples = 10
 
 # Set the outputs
-model_reporters = {"voters": lambda m: m.schedule.get_voters()}
+model_reporters = {"voters": lambda m: m.get_voters()}
 
 data = {}
 
 for i, var in enumerate(problem['names']):
     # Get the bounds for this variable and get <distinct_samples> samples within this space (uniform)
-    samples = np.linspace(*problem['bounds'][i], num=distinct_samples)
+    samples = np.linspace(*problem['bounds'][i], num = distinct_samples)
+    print(samples)
     
-    batch = BatchRunner(PPmodel, 
-                        max_steps=max_steps,
-                        iterations=replicates,
-                        variable_parameters={var: samples},
-                        model_reporters=model_reporters,
-                        display_progress=True)
+    batch = BatchRunner(Party_model, 
+                        max_steps = max_steps,
+                        iterations = replicates,
+                        variable_parameters = {var: samples},
+                        model_reporters = model_reporters)
     
     batch.run_all()
     

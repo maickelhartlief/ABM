@@ -34,12 +34,13 @@ class Party_model(Model):
     '''
 
     def __init__(self,
-                 prob_stimulus,
-                 prob_interaction,
-                 prob_move,
-                 prob_link,
-                 dynamic = False,
-                 params = None):
+                 prob_stimulus = None,
+                 prob_interaction = None,
+                 prob_move = None,
+                 prob_link = None,
+                 network = None,
+                 params = None,
+                 dynamic = False):
         '''
         description: initializes new Model object
         inputs:
@@ -53,6 +54,16 @@ class Party_model(Model):
         if params is None:
             params = import_module('configs.' + ('normal' if len(sys.argv) < 2 else sys.argv[1]))
         
+        if prob_stimulus is None:
+            prob_stimulus = params.prob_stimulus
+        if prob_interaction is None:
+            prob_interaction = params.prob_interaction
+        if prob_move is None:
+            prob_move = params.prob_move
+        if prob_link is None:
+            prob_link = params.prob_link
+        
+
         self.n_runs = params.n_runs
         self.char_distr = params.char_distr
         self.prob_stimulus = utils.set_valid(prob_stimulus, upper = 1, verbose = True, name = 'p')
@@ -67,7 +78,7 @@ class Party_model(Model):
         self.fermi_alpha = params.fermi_alpha
         self.fermi_b = params.fermi_b
         self.dynamic = dynamic
-        self.network = params.networks[0]
+        self.network = network if network is not None else params.networks[0]
 
         self.schedule = time.RandomActivation(self)
         self.time = 0
@@ -87,6 +98,8 @@ class Party_model(Model):
             self.graph = nx.Graph()
         elif self.network == "not_connected":
             self.graph = nx.Graph()
+        else:
+            raise Exception(f"'{self.network}' is not a valid model structure")
 
 
         self.init_agents()

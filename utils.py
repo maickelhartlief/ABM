@@ -1,5 +1,5 @@
 ###### utils.py
-# Contains some extra statis functions used in the program
+# Contains some extra static functions used in the program
 ####
 
 # External imports
