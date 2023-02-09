@@ -32,15 +32,15 @@ class Party_model(Model):
         - step(): updates environment and takes a step for each agent
         - get_pps(): returns data of all agents' political participation over time
     '''
+    params = import_module('configs.' + ('normal' if len(sys.argv) < 2 else sys.argv[1]))
 
     def __init__(self,
-                 prob_stimulus = None,
-                 prob_interaction = None,
-                 prob_move = None,
-                 prob_link = None,
-                 network = None,
-                 params = None,
-                 dynamic = False):
+                prob_stimulus = params.prob_stimulus,
+                 prob_interaction = params.prob_interaction,
+                 prob_move = params.prob_move,
+                 prob_link = params.prob_link,              
+                 dynamic = False,
+                 params = None):
         '''
         description: initializes new Model object
         inputs:

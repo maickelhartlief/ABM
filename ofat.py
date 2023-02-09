@@ -37,16 +37,17 @@ for i, var in enumerate(problem['names']):
     print(samples)
     
     batch = BatchRunner(Party_model, 
-                        max_steps = max_steps,
-                        iterations = replicates,
-                        variable_parameters = {var: samples},
-                        model_reporters = model_reporters)
+                        max_steps=max_steps,
+                        iterations=replicates,
+                        variable_parameters={var: samples},
+                        model_reporters=model_reporters,
+                        display_progress=True)
     
     batch.run_all()
     
     data[var] = batch.get_model_vars_dataframe()
 
-# Print and save data in excell
+# Print and save data in excel
 print(data)
 df_stimulus = pd.DataFrame.from_dict(data['prob_stimulus'])
 df_interaction = pd.DataFrame.from_dict(data['prob_interaction'])

@@ -105,13 +105,15 @@ def plot_global(Si, problem):
 
     # First order
     plot_index(Si, problem['names'], '1', 'First order sensitivity')
-    plt.savefig("results/sobol/First-order-sensitivity.png")
+    plt.savefig("results/sobol/First-order-sensitivity_fully_connected.png")
     plt.clf()
 
     # Total order
     plot_index(Si, problem['names'], 'T', 'Total order sensitivity')
-    plt.savefig("results/sobol/Total-order-sensitivity.png")
+    plt.savefig("results/sobol/Total-order-sensitivity_fully_connected.png")
     plt.clf()
 
-Si_voters = sobol.analyze(problem, data['voters'].values, calc_second_order = False)
+Si_voters = sobol.analyze(problem, data['voters'].values, calc_second_order=False)
 plot_global(Si_voters, problem)
+df_sobol = pd.DataFrame.from_dict(data)
+df_sobol.to_csv('results/sobol/fully_connected.csv')
