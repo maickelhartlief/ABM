@@ -19,6 +19,7 @@ This code was made by *Maickel Hartlief*, *Arend Geerlofs*, *Dominique Weltevred
 - `scikit_posthocs`
 
 **How to use**:
+
 To run the model, run `run.py`. 
 
 Hyperparameters can be changed by changing them in `normal.py` in the `configs` folder, or by copying `normal.py` into `[name].py` and calling `run.py` with input argument `[name]`.
