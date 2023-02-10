@@ -7,7 +7,6 @@
 n_runs = 3
 n_agents = 100
 n_iterations = 250
-n_distinct_samples = 10
 char_distr = 'normal'
 until_eligible = 4
 characteristics_affected = {'active' : .4,
@@ -24,3 +23,9 @@ m_barabasi = 2
 fermi_alpha = 4
 fermi_b = 1.8
 networks = ['not_connected', 'homophily', 'holme_kim', 'fully_connected']
+
+# for sensitivity analysis
+n_distinct_samples = 10
+problem = {'num_vars': 4,
+           'names': ['prob_stimulus', 'prob_interaction', 'prob_move', 'prob_link'],
+           'bounds': [[0, 0.25], [0, 0.25], [0, 0.1], [0.25, 0.75]]}

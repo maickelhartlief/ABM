@@ -41,23 +41,13 @@ class Party_model(Model):
     params = import_module('configs.' + ('normal' if len(sys.argv) < 2 else sys.argv[1]))
 
     def __init__(self,
-                prob_stimulus = params.prob_stimulus,
+                 prob_stimulus = params.prob_stimulus,
                  prob_interaction = params.prob_interaction,
                  prob_move = params.prob_move,
                  prob_link = params.prob_link,              
                  dynamic = False,
+                 network = None,
                  params = None):
-        '''
-        Description: initializes new Model object
-        Inputs:
-            - prob_stimulus: probability that a stimulus happens to all agents each step
-            - prob_interaction: probability that an agent interacts each step,
-            - prob_move: probability that an agent moves community,
-            - prob_link: probability that an agent creates a link to another agent during initialization
-            - network: which network structure to initialize the social network of agents with
-            - params: parameters imported from config/[name].py
-            - dynamic: whether the network structure changes over time
-        '''
         
         # Handle Initializing when not provided
         if params is None:
@@ -92,12 +82,10 @@ class Party_model(Model):
                                    name = 'linkage')
         
         # Initialize parameters based on config
-        self.char_distr = params.char_distr
         self.until_eligible = params.until_eligible
         self.characteristics_affected = params.characteristics_affected
         self.edges_per_step = params.edges_per_step
         self.n_agents = params.n_agents
-        self.m_barabasi = params.m_barabasi
         self.fermi_alpha = params.fermi_alpha
         self.fermi_b = params.fermi_b
         self.network = network
@@ -116,14 +104,14 @@ class Party_model(Model):
         if network == 'fully_connected':
             self.graph = nx.complete_graph(n = self.n_agents)
         elif network == 'holme_kim':
-            self.graph = nx.powerlaw_cluster_graph(n = self.n_agents, m = self.m_barabasi, p = prob_link)
+            self.graph = nx.powerlaw_cluster_graph(n = self.n_agents, m = params.m_barabasi, p = prob_link)
         elif network in ['homophily', 'not_connected']:
             self.graph = nx.Graph()
         else:
             raise Exception(f"'{network}' is not a valid model structure")
 
         # Initialize agents and do first datacollection
-        self.init_agents()
+        self.init_agents(params.char_distr)
         self.datacollector.collect(self)
 
     def add_agent(self, agent):
@@ -142,36 +130,39 @@ class Party_model(Model):
         else:
             self.graph = nx.relabel_nodes(self.graph, {agent.unique_id: agent})
 
-    def init_agents(self):
+    def init_agents(self, char_distr):
         '''
         Description: initialize all agents of the model and add them to the model (must be done 
                      in the model for mesa's sensitivity analysis).
+        Inputs:
+            - char_distr: from which random distribution initialization of characteristics are 
+                          drawn
         '''
 
         # Generate agent characteristics:
-        if self.char_distr == 'normal': # Truncated normal distribution, to stay within limits
+        if char_distr == 'normal': # Truncated normal distribution, to stay within limits
             mu = 2
             distr = stats.truncnorm(-mu, mu, loc = mu, scale = 1)
             samples = distr.rvs(self.n_agents * 8)
             characteristics = np.reshape(samples, (self.n_agents, 8))
-        elif self.char_distr == 'uniform': # Uniform distribution within limits
+        elif char_distr == 'uniform': # Uniform distribution within limits
             characteristics = np.random.uniform(1, 5, (self.n_agents, 8))
 
         # Intialize each agent
         for idx in range(self.n_agents):
             agent = Member(idx,
-                        self,
-                        until_eligible = 0 if random.uniform(0, 1) > self.prob_move else self.until_eligible,
-                        vote_duty = random.uniform(0, 1) < .03,
-                        active = characteristics[idx, 0],
-                        overt = characteristics[idx, 1],
-                        autonomous = characteristics[idx, 2],
-                        approaching = characteristics[idx, 3],
-                        continuous = characteristics[idx, 4],
-                        outtaking = characteristics[idx, 5],
-                        expressive = characteristics[idx, 6],
-                        social = characteristics[idx, 7],
-                        ses = random.randint(1, 3))
+                           self,
+                           until_eligible = 0 if random.uniform(0, 1) > self.prob_move else self.until_eligible,
+                           vote_duty = random.uniform(0, 1) < .03,
+                           active = characteristics[idx, 0],
+                           overt = characteristics[idx, 1],
+                           autonomous = characteristics[idx, 2],
+                           approaching = characteristics[idx, 3],
+                           continuous = characteristics[idx, 4],
+                           outtaking = characteristics[idx, 5],
+                           expressive = characteristics[idx, 6],
+                           social = characteristics[idx, 7],
+                           ses = random.randint(1, 3))
             
             # Add agent to model
             self.add_agent(agent)
@@ -181,13 +172,19 @@ class Party_model(Model):
         '''
         Description: updates environment and takes a step for each agent
         '''
-        # check whether stimulus happens for all agents
+        
+        # Check whether stimulus happens for all agents
         self.stimulus = random.uniform(0, 1) < self.prob_stimulus
 
-        # TODO might be worth collecting after the step?
+        # Let mesa handle all agent steps and datacollection
         self.schedule.step()
         self.datacollector.collect(self)
 
 
     def get_voters(self):
+        '''
+        Description: calculated the number of voters in the environment
+        Outputs:
+            - number of voters (number of agents in the model where agent.pps >= 2)
+        '''
         return len([True for agent in self.agents if agent.pps >= 2])

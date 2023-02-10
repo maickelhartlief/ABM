@@ -14,7 +14,7 @@ import numpy as np
 
 
 # List of condition names to loop over
-conditions = ["not_connected",  "holme_kim", "homophily","fully_connected"]
+conditions = ["not_connected",  "holme_kim", "homophily", "fully_connected"]
 
 # Initialize dictionary with voter percentages per condition
 voter_dict = {}
@@ -27,16 +27,16 @@ nr_per_cat = []
 
 # Loop over all result files
 for condition in conditions:
-    file = make_path(condition) + condition
-
     # Make a list of every line
-    lines = open(file).read().splitlines()
+    file = open(make_path(condition) + condition)
+    lines = file.read().splitlines()
 
     # Convert values to float
     floats = list(map(float, lines[:-4]))
     print(f"For {condition}, the mean is {np.mean(floats):.3f} with SD {np.std(floats):.3f}")
+    
     # Save all the values for the voter data, i.e. all except the last 4 lines, in a dict
-    voter_dict[condition] = floats#[:-4]
+    voter_dict[condition] = floats
 
     # Save the data for the 4 categories of political participation
     nr_list = []
@@ -49,6 +49,8 @@ for condition in conditions:
         # Convert list to float to strip of additional characters
         nr_list.append(float(nr))
     nr_per_cat.append(nr_list)
+
+    file.close()
 
 # Descriptives
 contig_table = pd.DataFrame(nr_per_cat, columns = cat_list, index = conditions)

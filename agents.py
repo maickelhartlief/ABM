@@ -17,14 +17,14 @@ import networkx as nx
 
 class Member(Agent):
     '''
-    description: an Agent object represents a person in a community that has a political
+    Description: an Agent object represents a person in a community that has a political
                  participation based on characteristics, which are in turn modified by
                  interacting with other agents or with the environment
-    inputs:
-        - name: unique identifier of agent
+    Inputs:
+        - unique_id: unique identifier of agent
         - model: model object agent is a part of
         - until_eligible: optional, number of steps until an agent can vote
-        - vote_duty: optional, whether agent must vote
+        - vote_duty: optional, whether agent must vote (pps >= 2)
         - active: optional, one of the agent's characteristics
         - overt: optional, one of the agent's characteristics
         - autonomous: optional, one of the agent's characteristics
@@ -34,16 +34,35 @@ class Member(Agent):
         - social: optional, one of the agent's characteristics
         - ses: optional, socio-economic status
         - char_modifiers: optional, dictionary with tendencies for characteristics
-          to change according to stimulus (>.5 = up, <.5 = down)
-    functions:
+          to change according to stimulus (>.5: up, <.5: down, not present: unchanged)
+    Functions:
+        - step(): performs 1 timestep of the agent
         - modify_characteristics(characteristic): calculates how much a characteristic
                                                   should be modified during a stimulus
         - stimulus(affected): adjust affected characteristics based on a model-wide stimulus
         - interaction_modifier(): calculates how much characteristics should be modified
                                   during an interaction
+        - accept_interaction(): 
         - interact(): handle interaction with a random other agent in the community
         - move_community(): replaces the agent with a new identical agent, simulating the
                             agent moving to a diferent community and another taking its place
+        - age(): updates the agent as time passes
+        - distance(): calculates the distance between the self and the partner by 
+                      Euclidean distance between personality traits related to 
+                      friendship and socio-economic status.
+        social_ids(): creates a list of ids that the agent is connected to in the
+                      social network
+        unconnected_ids(): creates a list of ids that the agent is not connected to in the
+                           social network
+        new_social(): adds new connections from the agent based on the Fermi-Dirac distribution.
+                      choice of addition depends on similarity in SES, and characteristics 
+                      social, approaching and autonomous.
+        remove_social(): removes a few random connections from the agent with a probability determined 
+                         by the Fermi-Dirac distribution. Choice of removal depends on similarity in on 
+                         similarity in SES, and characteristics social, approaching and autonomous.
+        consider_connection(partner, method): Calculate the (Fermi Dirac) probability of agent being 
+                                              connected to 'potential agent' and based on method add or 
+                                              remove the connection randomly.
         - update_pp(): updates the political participation of the agent, based on its
                        characteristics.
     '''
@@ -67,9 +86,8 @@ class Member(Agent):
                                    'continuous' : .5,
                                    'expressive' : .5,
                                    'outtaking' : .5}):
-        '''
-        description: initializes a new Agent object
-        '''
+        
+        # Initialize parameters based on inputs
         self.unique_id = unique_id
         self.model = model
         self.until_eligible = until_eligible
@@ -83,70 +101,71 @@ class Member(Agent):
         self.expressive = set_valid(expressive, verbose = True, name = 'expressive')
         self.social = set_valid(social, verbose = True, name = 'social')
         self.ses = set_valid(ses, lower = 1, upper = 3, verbose = False, name = 'ses')
+        
+        # Initialize standard parameters
         self.pps = None
-        self.char_modifiers = char_modifiers
+        self.move_community() # Happens to do all the steps necessary for initialization
 
-        # initial settings for contacts and time spent in location
-        self.move_community()
-
+        # Initialize social connections homophilysed on similarity
         if self.model.network == "homophily":
-            # initialize social connections homophilysed on similarity
             self.new_social()
             self.remove_social()
 
-        # initialize ppz
+        # Initialize ppz
         self.update_pp()
 
 
     def step(self):
-        # perform stimulus if applicable
+        '''
+        Description: performs 1 timestep of the agent
+        '''
+
+        # Subject to stimulus
         if self.model.stimulus:
             self.stimulus(self.model.characteristics_affected.keys())
 
-        # let agent interact according to probability
+        # Interact
         if random.uniform(0, 1) < self.model.prob_interaction:
             self.interact()
 
-        # Let agent make new connection and remove old according to probability
+        # Modify connections if model is dynamic
         if self.model.dynamic:
                 self.new_social()
                 self.remove_social()
 
-        # move agent according to probability
+        # Move community
         if random.uniform(0, 1) < self.model.prob_move:
             self.move_community()
 
+        # Update parameters 
         self.age()
         self.update_pp()
 
 
     def modify_characteristic(self, characteristic):
         '''
-        description: calculates how much a certain characteristic should change when agent
+        Description: calculates how much a certain characteristic should change when agent
                      is subjected to a stimulus
-        inputs:
+        Inputs:
             - characteristics: name of the characteristic to modify
-        outputs:
+        Outputs:
             - modification to characteristics
         '''
-        return 3 * (self.char_modifiers[characteristic] - random.randint(0, 1)) / (self.autonomous + self.continuous)
+        return 3 * (self.model.characteristics_affected[characteristic] - random.randint(0, 1)) / (self.autonomous + self.continuous)
 
 
     def stimulus(self, affected):
         '''
-        description: subject agent to stimulus, affecting (some of) its characteristics
-        inputs:
+        Description: subject agent to stimulus, affecting (some of) its characteristics
+        Inputs:
             - affected: list of names of characteristics that are affected by the stimulus
         '''
 
-        # no political participation means no subjection to stimuli
+        # No political participation means no subjection to stimuli
         if self.pps == 0:
             return
 
-        # only these 5 characteristics can be affected by stimuli
-        # NOTE: the netlogo code only checks whether values are valid after this step,
-        #       meaning that over or underflow in autonomous and continuous will change
-        #       the output of modify_charactastics(). we check it immediately.
+        # Adjust these characteristics because of stimulus
         if 'active' in affected:
             self.active = set_valid(self.modify_characteristic('active') + self.active)
         if 'overt' in affected:
@@ -161,72 +180,65 @@ class Member(Agent):
 
     def interaction_modifier(self, partner):
         '''
-        description: calculates how characteristics should be modified based on an interaction
+        Description: calculates how characteristics should be modified based on an interaction
                      with another agent
-        outputs:
+        Inputs:
+            - partner: agent that is being interacted with. modification is based on similarity
+        Outputs:
             - modification to characteristics
         '''
 
-        # set modification to political participation
-        # NOTE: stochasticity here was moved a level up to rejecting / accepting interaction
+        # Set modification based on characteristics
         mod = 1 / (self.autonomous + self.continuous)
 
-        # modify less when interaction is cynical
+        # Modify less when interaction is cynical
         if random.randint(0, int(19 * self.ses)) == 0:
             mod /= 10
 
-        # difference between participants hierin meenemen
-        mod /= distance_normalizer(self.distance(partner))
+        # Modify based on similarity between participants
+        return mod / distance_normalizer(self.distance(partner))
 
-        return mod
+
+    def accept_interaction(self):
+        '''
+        Description: checks whether agent would have an interaction
+        Inputs:
+            - 
+        '''
+        return self.pps < 3 and random.randint(0, 1)
 
 
     def interact(self):
         '''
-        description: attempts to interact with another agent, changing both their characteristics
+        Description: attempts to interact with another agent, changing both their characteristics
         '''
 
-        # check whether personality would lead to interaction
-        # NOTE: this states that only people that are already politically active actually interact
-        #       with others about politics. This seems off, and there are barely interactions in
-        #       the model. changing this makes the percentage of voters much more accurate.
-        if self.pps < 3 and random.randint(0, 1):
+        # Check whether personality would lead to interaction
+        if not self.accept_interaction():
             return
-        # if self.social + (self.pps / 3 + 1) + self.active + random.uniform(0, 2.5) <= 10:
-        #     return
-
-        # pick interaction partner from friends
-        # if len(self.socials_ids):
-        #     partner_id = random.choice(self.socials_ids)
-        #     partner = [agent for agent in self.model.agents if agent.unique_id == partner_id][0]
-
+        
+        # Pick interaction partner from friends
         partner = random.choice(self.model.agents)
         while partner == self:
             partner = random.choice(self.model.agents)
 
-        # path length
-        if nx.has_path(self.model.graph, self, partner):
-            path_length = nx.shortest_path_length(self.model.graph, self, partner)
-        else:
+        # Calculate path length
+        if not nx.has_path(self.model.graph, self, partner):
+            return
+        path_length = nx.shortest_path_length(self.model.graph, self, partner)
+
+        # Calculate probability that interaction is accepted based on path length where
+        # P_i(len = 1) ~= 0.9 
+        # P_i(len = 2) ~= 0.3
+        # P_i(len = 3) ~= 0.1
+        if 1 / (1 + np.exp(self.model.fermi_alpha * (path_length - self.model.fermi_b))) < random.random():
             return
 
-        # calculate probability that interaction is accepted based on path length
-        # path length 1 = 0.9, path length 2 = 0.3, path length 3 = 0.1 probability
-
-        p_accept = 1 / ( 1 + np.exp(self.model.fermi_alpha * (path_length - self.model.fermi_b)))
-
-        if p_accept < random.random():
+        # Check whether partner's personality would lead to interaction
+        if not partner.accept_interaction():
             return
-        # check whether partner's personality would accept interaction
-        # NOTE: this states that only people that are already politically active actually interact
-        #       with others about politics. This seems off, and there are barely interactions in
-        #       the model. changing this makes the percentage of voters much more accurate.
-        if partner.pps == 0 and random.randint(0, 1):
-            return
-        # if partner.social + partner.active + partner.approaching + random.uniform(0, 2.5) <= 10:
-        #     return
-
-        ## interact
+        
+        # Interact
         mod = self.interaction_modifier(partner)
         p_mod = partner.interaction_modifier(self)
 
@@ -236,22 +248,21 @@ class Member(Agent):
             self.approaching = set_valid(self.approaching + mod)
 
         pps_diff = self.pps - partner.pps
-        if pps_diff > 0:
+        if pps_diff >= 0:
             partner.active = set_valid(partner.active + p_mod)
-            # TODO seems like this should be mod instead of p_mod, but this is what the base model does
             self.overt = set_valid(self.overt + mod)
-        elif pps_diff < 0:
+        elif pps_diff <= 0:
             self.active = set_valid(self.active + mod)
-            # TODO seems like this should be p_mod instead of mod, but this is what the base model does
             partner.overt = set_valid(partner.overt + p_mod)
 
+        # Update parameters
         self.contacts += 1
         partner.contacts += 1
 
 
     def move_community(self):
         '''
-        description: replaces the agent with a new identical agent, simulating the
+        Description: replaces the agent with a new identical agent, simulating the
                      agent moving to a different community and another taking its place
         '''
         self.time_in_community = 1
@@ -261,25 +272,24 @@ class Member(Agent):
 
     def age(self):
         '''
-        description: updates the agent as time passes
+        Description: updates the agent as time passes
         '''
         self.time_in_community += 1
+        
         if self.until_eligible == 0:
             return
-
         self.until_eligible -= 1
 
 
     def distance(self, partner):
         """
-        description: calculate the distance between the self and the partner by Euclidean
-        distance between personality traits related to friendship and
-        social economic status.
-        inputs:
+        Description: calculates the distance between the self and the partner by 
+                     Euclidean distance between personality traits related to 
+                     friendship and socio-economic status.
+        Inputs:
             - partner: Agent to compare with
-        output:
-            - distance: float; bigger if individuals are less similar
-
+        Outputs:
+            - distance between agents' characteristics
         """
         friend_charact = np.array([self.social, self.autonomous, self.approaching, self.ses])
         p_friend_charact = np.array([partner.social, partner.autonomous, partner.approaching, partner.ses])
@@ -287,82 +297,79 @@ class Member(Agent):
         return np.linalg.norm((friend_charact - p_friend_charact))
 
 
-        # taken from https://github.com/MbBrainz/ABM-project-group8/blob/main/polarization/core/model.py
+    #### Adepted from https://github.com/MbBrainz/ABM-project-group8/blob/main/polarization/core/model.py
     @property
     def socials_ids(self):
         """
-        description: creates a list of ids that the agent is connected to in the
-        social network
+        Description: creates a list of ids that the agent is connected to in the
+                     social network
         """
-        if self in self.model.graph.adj.keys():
-            return [social_id for social_id in self.model.graph[self]]
-        else:
-            return []
+        return list(self.model.graph[self]) if self in self.model.graph.adj.keys() else []
+
 
     @property
     def unconnected_ids(self):
         """
-        description: creates a list of ids that the agent is not connected to in the
+        Description: creates a list of ids that the agent is not connected to in the
         social network
         """
         return [id for id in self.model.graph.nodes if (id not in self.socials_ids + [self])]
+    
 
     def new_social(self):
-        """
-        Adds a new random connection from the agent with a probability determined by the Fermi-Dirac distribution.
-        choice of addition depends on similarity in SES, and characteristics social, approaching and autonomous
-        """
-        # determine how large the pool of potential candidates is, depending on
+        '''
+        Descriptions: adds new connections from the agent based on the Fermi-Dirac distribution.
+                      choice of addition depends on similarity in SES, and characteristics 
+                      social, approaching and autonomous.
+        '''
+        
+        # Determine how large the pool of potential candidates is, depending on
         # how many unconnected nodes are left or how many nodes we want to max
         # add per step
-        if len(self.unconnected_ids) < self.model.edges_per_step:
-            n_potentials = len(self.unconnected_ids)
-        else:
-            n_potentials = self.model.edges_per_step
+        n_potentials = min(len(self.unconnected_ids), self.model.edges_per_step)
 
         # randomly select 'n_potentials' from people the agent is not connected to
         pot_make_ids = np.random.choice(self.unconnected_ids, size=n_potentials, replace=False)
 
-        # get agents from model.schedule with the id's from the pot_make_ids
-        pot_makes = [social for social in self.model.schedule.agents if social in pot_make_ids]
-
-        for potential in pot_makes:
-            self.consider_connection(potential, method="ADD")
+        for potential in self.model.schedule.agents:
+            if potential in pot_make_ids:
+                self.consider_connection(potential, method="ADD")
+        
 
     def remove_social(self):
-        """
-        Removes a few random connections from the agent with a probability determined by the Fermi-Dirac distribution.
-        Choice of removal depends on similarity in on similarity in SES, and characteristics social, approaching and autonomous
-        """
-        # determine how large the pool of potential candidates is, depending on
+        '''
+        Description: removes a few random connections from the agent with a probability determined 
+                     by the Fermi-Dirac distribution. Choice of removal depends on similarity in on 
+                     similarity in SES, and characteristics social, approaching and autonomous.
+        '''
+        
+        # Determine how large the pool of potential candidates is, depending on
         # how many unconnected nodes are left or how many edges we want to max
         # add per step
         if not self.socials_ids:
             return
-
-        if len(self.socials_ids) < self.model.edges_per_step:
-            n_potentials = len(self.socials_ids)
-        else:
-            n_potentials = self.model.edges_per_step
+        n_potentials = min(len(self.socials_ids), self.model.edges_per_step)
 
         # randomly select 'n_potentials' from the agent's network
         pot_break_ids = np.random.choice(self.socials_ids, size=n_potentials, replace=False)
 
-        # get agents from model.schedule with the id's from the pot_break_ids
-        pot_breaks = [social for social in self.model.schedule.agents if social in pot_break_ids]
+        # Remove connections
+        for potential in self.model.schedule.agents:
+            if potential in pot_break_ids:
+                self.consider_connection(potential, method = "REMOVE")
 
-        for potential in pot_breaks:
-            self.consider_connection(potential, method="REMOVE")
 
     def consider_connection(self, partner, method):
         """
-        Calculate the (Fermi Dirac) probability of agent being connected to 'potential agent' and based on method add or remove the connection randomly
-        Args:
-            partner (Agent): the agent to consider
-            method (str): "ADD" or "REMOVE"
+        Description: Calculate the (Fermi Dirac) probability of agent being connected 
+                     to 'potential agent' and based on method add or remove the 
+                     connection randomly.
+        Inputs:
+            partner: the agent to consider
+            method: "ADD" or "REMOVE", whether the consideration is to add or remove 
+                    a link
         """
         p_ij = 1 / ( 1 + np.exp(self.model.fermi_alpha * (self.distance(partner) - self.model.fermi_b)))
-        # self.model.p_accept_list.append(p_ij)
 
         if method == "ADD":
             if p_ij > random.random():
@@ -371,27 +378,28 @@ class Member(Agent):
         if method == "REMOVE":
             if p_ij < random.random():
                 self.model.graph.remove_edge(self, partner)
+    ####
 
 
     def update_pp(self):
         '''
-        description: calculates the agent's policical participation based on its characteristics
+        Description: calculates the agent's policical participation based on its 
+                     characteristics. This is based on the Ruegin model, and works 
+                     hierarchically (n must be reached before n+1 is considered)
         '''
         self.pps =  0 if random.uniform(0, 1) > .1 else 1
 
-        # agents that aren't eligible do not have to update their pps
-        if self.until_eligible: # != 0
+        # Agents that aren't eligible do not have to update their pps
+        if self.until_eligible:
             return
 
-        # NOTE: probably a mistake in base model where vote duty alone does not envoke checks for higher levels.
+        # Increase the level based on characteristics, and stop as soon as 1 check fails.
         if self.vote_duty or self.active + self.approaching - (5 / 3) * self.ses > random.randint(2, 4):
             self.pps = 2
         else:
             return
 
-        # increase the level based on characteristics, and stop as soon as 1 check fails.
-        # NOTE: base model uses model time, instead of time spent in community of agent. the latter makes much more sense
-        if self.active + self.overt + self.approaching + self.social + ((2.5 * self.contacts ) / self.time_in_community)  > random.randint(12, 18):
+        if self.active + self.overt + self.approaching + self.social + ((2.5 * self.contacts ) / self.time_in_community) > random.randint(12, 18):
             self.pps = 3
         else:
             return

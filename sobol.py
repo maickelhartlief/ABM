@@ -23,51 +23,45 @@ import numpy as np
 import sys
 
 
-# prevent mesa's deprecation warnings that can't really be solved since the new version is 
+# Prevent mesa's deprecation warnings that can't really be solved since the new version is 
 # buggy and has very poor documentation.
 filterwarnings("ignore") 
 
-# Import parameter configuration from file based on input argument 
-# (default: configs.normal)
+# Import parameter configuration from file based on input argument (default: configs.normal)
 params = get_config()
-
-# Set the repetitions, the amount of steps, and the amount of distinct values per variable
 replicates = params.n_runs
 max_steps = params.n_iterations
 distinct_samples = params.n_distinct_samples
-
-# We define our variables and bounds
-problem = {
-    'num_vars': 4,
-    'names': ['prob_stimulus', 'prob_interaction', 'prob_move', 'prob_link'],
-    'bounds': [[0, 0.25], [0, 0.25], [0, 0.1], [0.25, 0.75]]
-}
+problem = params.problem
 
 # Set the outputs
 model_reporters = {"voters" : lambda m : m.get_voters()}
 
-# Get all samples
+# Get all samples and initialize dataframe
 param_values = saltelli.sample(problem, distinct_samples, calc_second_order = False)
+data = pd.DataFrame(index = range(replicates * len(param_values)), 
+                    columns = ['prob_stimulus', 'prob_interaction', 'prob_move', 'prob_link'])
+data['Run'], data['voters'] = np.nan, np.nan
 
-# READ NOTE BELOW CODE
+# Create batchrunner
 batch = BatchRunner(Party_model, 
                     max_steps = max_steps,
                     variable_parameters = {name : [] for name in problem['names']},
                     model_reporters = model_reporters)
 
+# Run for all combinations of parameter values
 count = 0
-data = pd.DataFrame(index = range(replicates * len(param_values)), 
-                    columns = ['prob_stimulus', 'prob_interaction', 'prob_move', 'prob_link'])
-data['Run'], data['voters'] = np.nan, np.nan
-
 for _ in range(replicates):
     for vals in param_values: 
-        # Change parameters that should be integers
-        vals = list(vals)
+        vals = list(vals) # Change parameters that should be integers
+        
         # Transform to dict with parameter names and their values
         variable_parameters = {name : val for name, val in zip(problem['names'], vals)}
         
+        # Run model
         batch.run_iteration(variable_parameters, tuple(vals), count)
+        
+        # Save results
         iteration_data = batch.get_model_vars_dataframe().iloc[count]
         iteration_data['Run'] = count # Don't know what causes this, but iteration number is not correctly filled
         data.iloc[count, 0:4] = vals
@@ -80,15 +74,15 @@ print('saving results...       ', end = '\r', flush = True)
 
 def plot_index(s, params, i, title=''):
     """
-    Creates a plot for Sobol sensitivity analysis that shows the contributions
-    of each parameter to the global sensitivity.
+    Description: creates a plot for Sobol sensitivity analysis that shows the contributions
+                 of each parameter to the global sensitivity.
 
-    Args:
-        s (dict): dictionary {'S#': dict, 'S#_conf': dict} of dicts that hold
-            the values for a set of parameters
-        params (list): the parameters taken from s
-        i (str): string that indicates what order the sensitivity is.
-        title (str): title for the plot
+    Inputs:
+        - s: dictionary of dictionaries that hold
+             the values for a set of parameters
+        - params: the parameters taken from s
+        - i: string that indicates what order the sensitivity is.
+        - title: title for the plot
     """
 
     if i == '2':
@@ -112,17 +106,24 @@ def plot_index(s, params, i, title=''):
     plt.axvline(0, c='k')
 
 def plot_global(Si, problem):
+    '''
+    Description: plots the first and total order sensitivity of parameters
+    Inputs:
+        - Si: sensitivity
+        - problem: dictionary of parameters to perform sensitivity analysis on
+    '''
+
     # set location
     result_path = make_path('sobol')
     
     # First order
     plot_index(Si, problem['names'], '1', 'First order sensitivity')
-    plt.savefig("results/sobol/First-order-sensitivity_fully_connected.png")
+    plt.savefig(f"{result_path}First-order-sensitivity_fully_connected.png")
     plt.clf()
 
     # Total order
     plot_index(Si, problem['names'], 'T', 'Total order sensitivity')
-    plt.savefig("results/sobol/Total-order-sensitivity_fully_connected.png")
+    plt.savefig(f"{result_path}Total-order-sensitivity_fully_connected.png")
     plt.clf()
 
 Si_voters = sobol.analyze(problem, data['voters'].values, calc_second_order = False)
