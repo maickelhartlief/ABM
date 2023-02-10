@@ -79,13 +79,13 @@ def make_path(path = ''):
     return result_path + '/'
 
 
-def get_config():
+def get_config(config = None):
     '''
     description: retrieves hyperparameters from config file (uses configs/normal.py if none given)
     outputs:
         - hyperparameters form config file
     '''
-    return import_module('configs.' + ('normal' if len(sys.argv) < 2 else sys.argv[1]))
+    return import_module('configs.' + (config if config is not None else ('normal' if len(sys.argv) < 2 else sys.argv[1])))
 
 # Categorize agents to save as graph
 def get_category(pp):

@@ -10,17 +10,12 @@ from utils import make_path, get_config
 
 # External imports
 from warnings import filterwarnings
-import SALib
 from SALib.sample import saltelli
-import pandas as pd
-from mesa.batchrunner import BatchRunner
-from IPython.display import clear_output
 from SALib.analyze import sobol
+from mesa.batchrunner import BatchRunner
 import matplotlib.pyplot as plt
 from itertools import combinations
-from importlib import import_module
-import numpy as np
-import sys
+from numpy import isnan
 
 
 # Prevent mesa's deprecation warnings that can't really be solved since the new version is 
@@ -36,12 +31,7 @@ problem = params.problem
 
 # Set the outputs
 model_reporters = {"voters" : lambda m : m.get_voters()}
-
-# Get all samples and initialize dataframe
 param_values = saltelli.sample(problem, distinct_samples, calc_second_order = False)
-data = pd.DataFrame(index = range(replicates * len(param_values)), 
-                    columns = ['prob_stimulus', 'prob_interaction', 'prob_move', 'prob_link'])
-data['Run'], data['voters'] = np.nan, np.nan
 
 # Create batchrunner
 batch = BatchRunner(Party_model, 
@@ -50,26 +40,18 @@ batch = BatchRunner(Party_model,
                     model_reporters = model_reporters)
 
 # Run for all combinations of parameter values
-count = 0
-for _ in range(replicates):
-    for vals in param_values: 
+voters_per_run = []
+for run in range(replicates):
+    for idx, vals in enumerate(param_values): 
         vals = list(vals) # Change parameters that should be integers
         
         # Transform to dict with parameter names and their values
         variable_parameters = {name : val for name, val in zip(problem['names'], vals)}
         
         # Run model
-        batch.run_iteration(variable_parameters, tuple(vals), count)
-        
-        # Save results
-        iteration_data = batch.get_model_vars_dataframe().iloc[count]
-        iteration_data['Run'] = count # Don't know what causes this, but iteration number is not correctly filled
-        data.iloc[count, 0:4] = vals
-        data.iloc[count, 4:8] = iteration_data
-        count += 1
+        batch.run_iteration(variable_parameters, tuple(vals), run)
+        print(f'run {run * len(param_values) + idx} / {replicates * len(param_values)}', end = '\r', flush = True)
 
-        clear_output()
-        print(f'running... ({count / (len(param_values) * (replicates)) * 100:.2f}%)', end = '\r', flush = True)
 print('saving results...       ', end = '\r', flush = True)
 
 def plot_index(s, params, i, title=''):
@@ -89,9 +71,9 @@ def plot_index(s, params, i, title=''):
         p = len(params)
         params = list(combinations(params, 2))
         indices = s['S' + i].reshape((p ** 2))
-        indices = indices[~np.isnan(indices)]
+        indices = indices[~isnan(indices)]
         errors = s['S' + i + '_conf'].reshape((p ** 2))
-        errors = errors[~np.isnan(errors)]
+        errors = errors[~isnan(errors)]
     else:
         indices = s['S' + i]
         errors = s['S' + i + '_conf']
@@ -126,10 +108,7 @@ def plot_global(Si, problem):
     plt.savefig(f"{result_path}total-order_sensitivity_{params.networks[0]}.png")
     plt.clf()
 
-print(data)
-print()
-print(data['voters'].values)
-
-Si_voters = sobol.analyze(problem, data['voters'].values, calc_second_order = False)
+voters_per_run = batch.get_model_vars_dataframe()['voters'].values
+Si_voters = sobol.analyze(problem, voters_per_run, calc_second_order = False)
 plot_global(Si_voters, problem)
 print('done!            ')

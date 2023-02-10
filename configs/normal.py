@@ -1,12 +1,12 @@
 ###### normal.py
 # A configuration file with hyperparameters. Alternatives can easily be made by copying 
-# this code to another file in the same folder and calling run.py with the name of that 
-# file as an input variable
+# skeleton.py to another file in the same folder and calling run.py with the name of that 
+# file as an input variable.
 ####
 
-n_runs = 2
+n_runs = 5
 n_agents = 100
-n_iterations = 400
+n_iterations = 5000
 char_distr = 'normal'
 until_eligible = 4
 characteristics_affected = {'active' : .4,

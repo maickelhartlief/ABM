@@ -4,19 +4,19 @@ This code was made by *Maickel Hartlief*, *Arend Geerlofs*, *Dominique Weltevred
 - `math`
 - `sys`
 - `os`
+- `importlib`
 - `random`
 - `matplotlib`
 - `numpy`
 - `scipy`
-- `lib`
+- `lib`.
 - `mesa`
 - `networkx`
 - `seaborn`
 - `panda`
 - `SALib`
-- `IPython`
-- `itertools` 
-- `scikit_posthocs`
+- `itertools`
+- `scikit_posthocs`.
 - `warnings`
 
 **How to use**:
@@ -53,7 +53,7 @@ To do statistical analysis on the results of the model, run `statistics.py`. Thi
 - `prob_move (float[0-1])`: Probability that any agent gets reset (simulates moving community and getting replaced by another agent).
 - `prob_link (float[0-1])`: Parameter of Holme-Kim algorithm Triad formation probability after each preferential attachment mechanism.
 - `m_barabasi (float)`: Parameter of Holme-Kim algorithm specifiying the number of nodes to which a new node connects at each iteration.
-- `fermi_alpha (float)`: Parameter if Fermi-Dirac distribution 
-- `fermi_b (float)`: Parameter if Fermi-Dirac distribution
+- `fermi_alpha (float)`: Parameter of the Fermi-Dirac distribution. it determines the speed of convergence.
+- `fermi_b (float)`: Parameter of the Fermi-Dirac distribution. the distance at with P_ij = 1.
 - `networks (list{str['not_connected', 'holme_kim', 'homophily', 'fully_connected']})`: Which type of network structure(s) to run the model with. `'not_connected'` has no links, `'holme_kim'` has a common social network structure, `'homophily'` has a social network structure based on similarities in the agents' characteristics, and `'fully_connected'` has a link between every 2 agents.
 

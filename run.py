@@ -9,14 +9,7 @@ from agents import Member
 from utils import safe_run_data, make_path, get_config, get_category
 
 # External imports
-import sys
-import os
-import random
 import matplotlib.pyplot as plt
-import numpy as np
-from scipy import stats
-from mesa import Agent, Model, space, time
-from mesa.datacollection import DataCollector
 import networkx as nx
 import seaborn as sns
 import pandas as pd

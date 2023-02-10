@@ -1,5 +1,6 @@
 ###### statistics.py
-# TODO
+# Runs the statistical tests that checks whether there is a significant difference 
+# between different network implementations in the model.
 ####
 
 # Internal imports
@@ -10,8 +11,9 @@ from scipy import stats
 import pandas as pd
 import matplotlib.pyplot as plt
 import scikit_posthocs as sp
-import numpy as np
+from numpy import mean, std, add
 
+# Initialize string to store results in
 results = ''
 
 # List of condition names to loop over
@@ -36,7 +38,7 @@ for condition in conditions:
 
     # Convert values to float
     floats = list(map(float, lines[:-4]))
-    results += f"For {condition}, the mean is {np.mean(floats):.3f} with SD {np.std(floats):.3f}\n"
+    results += f"For {condition}, the mean is {mean(floats):.3f} with SD {std(floats):.3f}\n"
     
     # Save all the values for the voter data, i.e. all except the last 4 lines, in a dict
     voter_dict[condition] = floats
@@ -117,9 +119,9 @@ gladiators = reform_list(nr_per_cat, 3)
 
 plt.bar(conditions, apathetic, color = "tan")
 plt.bar(conditions, spectators, bottom = apathetic, color = "orange" )
-spec_apath = np.add(spectators, apathetic).tolist()
+spec_apath = add(spectators, apathetic).tolist()
 plt.bar(conditions, transitionals, bottom = spec_apath, color = "pink")
-plt.bar(conditions, gladiators, bottom = np.add(spec_apath, transitionals).tolist(), color = "red")
+plt.bar(conditions, gladiators, bottom = add(spec_apath, transitionals).tolist(), color = "red")
 plt.title("Bar plot of number of agents in each political participation category")
 plt.savefig(f"{path}barplot.png")
 plt.clf()

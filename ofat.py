@@ -10,8 +10,6 @@ from party import Party_model
 from utils import make_path, get_config
 
 # External imports
-import os
-from IPython.display import clear_output
 from mesa.batchrunner import BatchRunner
 import pandas as pd
 import numpy as np
@@ -34,7 +32,7 @@ problem = params.problem
 # Set the outputs
 model_reporters = {"voters": lambda m: m.get_voters()}
 
-data = {}
+data = pd.DataFrame()
 for idx, var in enumerate(problem['names']):
     print(f'varying {var}')
     
@@ -50,58 +48,33 @@ for idx, var in enumerate(problem['names']):
     batch.run_all()
     
     # Save results
-    data[var] = batch.get_model_vars_dataframe()
+    var_data = batch.get_model_vars_dataframe().rename(columns = {var : 'val'})
+    var_data['var'] = var
+    data = pd.concat([data, var_data])
 
 # Write results to file
-path = make_path('excel')
-for var in problem['names']:
-    pd.DataFrame.from_dict(data[var]).to_csv(f'{path}{var}.csv')
+path = make_path('sensitivity_analysis')
+data.to_csv(f'{path}ofat.csv')
+
 
 ## visualize results
 
-
-def plot_param_var_conf(ax, df, var, param, i):
-    """
-    Description: helper function for plot_all_vars. Plots the individual parameter vs
-                 variables passed.
-
-    Inputs:
-        - ax: the axis to plot to
-        - df: data to be plotted
-        - var: variables from df to plot
-        - param: which dependent variable to plot
-    """
-    x = df.groupby(var).mean().reset_index()[var]
-    y = df.groupby(var).mean()[param]
-
-    replicates = df.groupby(var)[param].count()
-    err = (1.96 * df.groupby(var)[param].std()) / np.sqrt(replicates)
-
-    ax.plot(x, y, c='k')
-    ax.fill_between(x, y - err, y + err)
-
-    ax.set_xlabel(var)
-    ax.set_ylabel(param)
-
-
-def plot_all_vars(df, param):
-    """
-    Description: Plots the parameters passed vs each of the output variables.
-
-    Inputs:
-        - df: data to be plotted
-        - param: the parameter to be plotted
-    """
-    f, axs = plt.subplots(4, sharex = False, figsize = (7, 10))
-    f.tight_layout()
-    
-    for idx, var in enumerate(problem['names']):
-        plot_param_var_conf(axs[idx], data[var], var, param, idx)
-
-
-# set location
+# Set location
 result_path = make_path('sensitivity_analysis')
 
-plot_all_vars(data, 'voters') 
+# Plot voters per value for changing parameters
+fig, axs = plt.subplots(4, sharex = False, figsize = (7, 10))
+fig.tight_layout()
+
+# Subplot per variable tested for sensitivity
+for idx, var in enumerate(problem['names']):
+    var_data = data[data['var'] == var].drop(columns = ['Run']).groupby('val').agg(['mean', 'std']).reset_index()
+    var_data['err'] = (1.96 * var_data['voters']['std']) / np.sqrt(replicates)
+    
+    axs[idx].plot(var_data['val'].values, var_data['voters']['mean'].values, c = 'k')
+    axs[idx].fill_between(var_data['val'].values, var_data['voters']['mean'] - var_data['err'], var_data['voters']['mean'] + var_data['err'])
+
+    axs[idx].set_xlabel(var)
+    axs[idx].set_ylabel('voters')
+
 plt.savefig(f"{result_path}ofat.png")
-plt.show()

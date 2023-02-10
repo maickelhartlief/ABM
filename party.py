@@ -12,12 +12,10 @@ from agents import Member
 # External imports
 import numpy as np
 import random
-from mesa import Agent, Model, space, time
+from mesa import Agent, Model, time
 from mesa.datacollection import DataCollector
 import networkx as nx
-from importlib import import_module
-import sys
-from scipy import stats
+from scipy.stats import truncnorm
 
 
 class Party_model(Model):
@@ -38,13 +36,12 @@ class Party_model(Model):
         - step(): updates model environment and takes a step for each agent
         - get_voters(): returns the number of voters in the model (#agents where agent.pps >= 2)
     '''
-    params = import_module('configs.' + ('normal' if len(sys.argv) < 2 else sys.argv[1]))
 
     def __init__(self,
-                 prob_stimulus = params.prob_stimulus,
-                 prob_interaction = params.prob_interaction,
-                 prob_move = params.prob_move,
-                 prob_link = params.prob_link,              
+                 prob_stimulus = None,
+                 prob_interaction = None,
+                 prob_move = None,
+                 prob_link = None,              
                  dynamic = False,
                  network = None,
                  params = None):
@@ -142,7 +139,7 @@ class Party_model(Model):
         # Generate agent characteristics:
         if char_distr == 'normal': # Truncated normal distribution, to stay within limits
             mu = 2
-            distr = stats.truncnorm(-mu, mu, loc = mu, scale = 1)
+            distr = truncnorm(-mu, mu, loc = mu, scale = 1)
             samples = distr.rvs(self.n_agents * 8)
             characteristics = np.reshape(samples, (self.n_agents, 8))
         elif char_distr == 'uniform': # Uniform distribution within limits
