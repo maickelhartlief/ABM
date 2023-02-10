@@ -1,6 +1,9 @@
 ###### statistics.py
-# 
+# TODO
 ####
+
+# Internal imports
+from utils import make_path
 
 # External imports
 from scipy import stats
@@ -8,6 +11,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import scikit_posthocs as sp
 import numpy as np
+
 
 # List of condition names to loop over
 conditions = ["not_connected",  "holme_kim", "homophily","fully_connected"]
@@ -23,7 +27,7 @@ nr_per_cat = []
 
 # Loop over all result files
 for condition in conditions:
-    file = f'results/{condition}/{condition}'
+    file = make_path(condition) + condition
 
     # Make a list of every line
     lines = open(file).read().splitlines()
@@ -42,7 +46,7 @@ for condition in conditions:
         # List of categories for the chi square test
         if cat not in cat_list:
             cat_list.append(cat)
-        # Convert list to float and then to int to strip of additional characters
+        # Convert list to float to strip of additional characters
         nr_list.append(float(nr))
     nr_per_cat.append(nr_list)
 
@@ -64,13 +68,15 @@ else:
     f"Therefore, the results of the ANOVA test were: {stats.f_oneway(*list(voter_dict.values()))} \n"
     f"The results of the post-hoc are the following: _")#{sp.posthoc_dunn(*list(voter_dict.values())), p_adjust = 'bonferroni'}")
 
+# Set location
+path = make_path()
 
 fig = plt.figure(figsize = (10, 10))
 ax = fig.add_subplot(111)
 
 ax.boxplot(list(voter_dict.values()), labels=conditions, showmeans= True)
 ax.set_title("Voter percentage across conditions", fontsize= 20)
-plt.savefig(f"results/results_boxplot.png")
+plt.savefig(f"{path}results_boxplot.png")
 plt.clf()
 
 # # Chi square
@@ -102,6 +108,5 @@ spec_apath = np.add(spectators, apathetic).tolist()
 plt.bar(conditions, transitionals, bottom = spec_apath, color = "pink")
 plt.bar(conditions, gladiators, bottom = np.add(spec_apath, transitionals).tolist(), color = "red")
 plt.title("Bar plot of number of agents in each political participation category")
-#plt.show()
-plt.savefig(f"results/barplot.png")
+plt.savefig(f"{path}barplot.png")
 plt.clf()

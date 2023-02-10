@@ -1,5 +1,7 @@
 ###### agents.py
-# 
+# Speficies the `Member` class which is a subclass of a mesa.Agent. This 
+# represents the agents of the model and handles characteristics, interacting, 
+# and has the dependent variable political participation.
 ####
 
 # Internal imports

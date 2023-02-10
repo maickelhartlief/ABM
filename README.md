@@ -17,6 +17,7 @@ This code was made by *Maickel Hartlief*, *Arend Geerlofs*, *Dominique Weltevred
 - `IPython`
 - `itertools` 
 - `scikit_posthocs`
+- `warnings`
 
 **How to use**:
 
@@ -26,12 +27,12 @@ Hyperparameters can be changed by changing them in `normal.py` in the `configs` 
 
 To do sensitivity analisys, run `ofat.py` (local) or `sobol.py` (global). These use the first element in the `network` parameter in the `normal.py` config file, so make sure to change that to the network you want to run the sensitivity analisys on.
 
-To do statistical analysis, run `statistics.py`. This uses the results saved when running `run.py`, so make sure to do that beforehand.
+To do statistical analysis on the results of the model, run `statistics.py`. This uses the results saved when running `run.py`, so make sure to do that beforehand.
 
 **Files**:
 - `run.py`: Runs the model with the hyperparameters set in `normal.py`, unless another file is specified as input argument, and saves plots and graphs into the `results` folder.
-- `ofat.py`: TODO
-- `sobol.py`: TODO
+- `ofat.py`: Run local sensitivity analisys (one factor a time) for `'prob_stimulus'`, ` 'prob_interaction'`, `'prob_move'`, and `'prob_link'`, using the parameters in `normal.py` and the first element of networks as the network structure. Also saves plots and results.
+- `sobol.py`: Runs global sensitivity analisys for `'prob_stimulus'`, ` 'prob_interaction'`, `'prob_move'`, and `'prob_link'`, using the parameters in `normal.py` and the first element of networks as the network structure. Also saves plots and results.
 - `statistics.py`: TODO
 - `party.py`: Specifies the `Party_model` class which is a subclass of a `mesa.Model`. This represents the environment of the model and handles all global functionality like environment variables, data collection, initializing agents, and calling the agents' step functions each step.
 - `agents.py`: Speficies the `Member` class which is a subclass of a `mesa.Agent`. This represents the agents of the model and handles characteristics, interacting, and has the dependent variable political participation.
@@ -42,6 +43,7 @@ To do statistical analysis, run `statistics.py`. This uses the results saved whe
 - `n_runs (int)`: Number of independent runs to run each network type for.
 - `n_agents (int)`: Number of agents in the model.
 - `n_iterations (int)`: Number of steps to run the model for.
+- `n_distinct_samples`: how many sample values to take for each parameter during sensitivity analysis.
 - `char_distr (str)`: Distribution used to initialize the characteristics of the agents.
 - `until_eligible (int)`: Steps until newly moved agents are allowed to vote.
 - `characteristics_affected (dict{str['active', 'overt', 'continuous', 'expressive', 'outtaking'] : float[0-1]})`: Whether characteristics are affected by events (pressence in the dictionary) and how they are affected (<.5 tends down, >.5 tends up).

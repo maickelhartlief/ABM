@@ -1,11 +1,15 @@
 ###### sobol.py
-# 
+# Runs global sensitivity analisys for 'prob_stimulus', 'prob_interaction', 
+# 'prob_move', and 'prob_link', using the parameters in normal.py and the first
+# element of networks as the network structure. Also saves plots and results.
 ####
 
 # Internal imports
 from party import Party_model
+from utils import make_path, get_config
 
 # External imports
+from warnings import filterwarnings
 import SALib
 from SALib.sample import saltelli
 import pandas as pd
@@ -14,12 +18,23 @@ from IPython.display import clear_output
 from SALib.analyze import sobol
 import matplotlib.pyplot as plt
 from itertools import combinations
+from importlib import import_module
 import numpy as np
+import sys
+
+
+# prevent mesa's deprecation warnings that can't really be solved since the new version is 
+# buggy and has very poor documentation.
+filterwarnings("ignore") 
+
+# Import parameter configuration from file based on input argument 
+# (default: configs.normal)
+params = get_config()
 
 # Set the repetitions, the amount of steps, and the amount of distinct values per variable
-replicates = 5
-max_steps = 5000
-distinct_samples = 10
+replicates = params.n_runs
+max_steps = params.n_iterations
+distinct_samples = params.n_distinct_samples
 
 # We define our variables and bounds
 problem = {
@@ -60,8 +75,8 @@ for _ in range(replicates):
         count += 1
 
         clear_output()
-        print(f'{count / (len(param_values) * (replicates)) * 100:.2f}% done', end = '\r', flush = True)
-print('done!')
+        print(f'running... ({count / (len(param_values) * (replicates)) * 100:.2f}%)', end = '\r', flush = True)
+print('saving results...       ', end = '\r', flush = True)
 
 def plot_index(s, params, i, title=''):
     """
@@ -98,11 +113,8 @@ def plot_index(s, params, i, title=''):
 
 def plot_global(Si, problem):
     # set location
-    result_path = 'results/sobol'
-    if not os.path.exists(result_path):
-       os.makedirs(result_path)
-    result_path += '/'
-
+    result_path = make_path('sobol')
+    
     # First order
     plot_index(Si, problem['names'], '1', 'First order sensitivity')
     plt.savefig("results/sobol/First-order-sensitivity.png")
@@ -115,3 +127,4 @@ def plot_global(Si, problem):
 
 Si_voters = sobol.analyze(problem, data['voters'].values, calc_second_order = False)
 plot_global(Si_voters, problem)
+print('done!            ')

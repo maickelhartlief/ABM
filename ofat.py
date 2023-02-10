@@ -1,11 +1,15 @@
 ###### ofat.py
-# 
+# Run local sensitivity analisys (one factor a time) for 'prob_stimulus',  
+# 'prob_interaction', 'prob_move', and 'prob_link', using the parameters in 
+# normal.py and the first element of networks as the network structure. Also 
+# saves plots and results.
 ####
 
-# internal imports
+# Internal imports
 from party import Party_model
+from utils import make_path, get_config
 
-# external imports
+# External imports
 import os
 from IPython.display import clear_output
 from mesa.batchrunner import BatchRunner
@@ -13,6 +17,16 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from agents import Member
+from warnings import filterwarnings
+
+
+# prevent mesa's deprecation warnings that can't really be solved since the new version is 
+# buggy and has very poor documentation.
+filterwarnings("ignore") 
+
+# Import parameter configuration from file based on input argument 
+# (default: configs.normal)
+params = get_config()
 
 # We define our variables and bounds
 problem = {
@@ -22,9 +36,9 @@ problem = {
 }
 
 # Set the repetitions, the amount of steps, and the amount of distinct values per variable
-replicates = 10
-max_steps = 5000
-distinct_samples = 10
+replicates = params.n_runs
+max_steps = params.n_iterations
+distinct_samples = params.n_distinct_samples
 
 # Set the outputs
 model_reporters = {"voters": lambda m: m.get_voters()}
@@ -32,30 +46,31 @@ model_reporters = {"voters": lambda m: m.get_voters()}
 data = {}
 
 for i, var in enumerate(problem['names']):
+    print(f'varying {var}')
     # Get the bounds for this variable and get <distinct_samples> samples within this space (uniform)
     samples = np.linspace(*problem['bounds'][i], num = distinct_samples)
-    print(samples)
     
     batch = BatchRunner(Party_model, 
                         max_steps = max_steps,
                         iterations = replicates,
-                        variable_parameters = {var: samples},
+                        variable_parameters = {var : samples},
                         model_reporters = model_reporters)
     
     batch.run_all()
     
     data[var] = batch.get_model_vars_dataframe()
 
-# Print and save data in excell
-print(data)
+# Save data in excel
 df_stimulus = pd.DataFrame.from_dict(data['prob_stimulus'])
 df_interaction = pd.DataFrame.from_dict(data['prob_interaction'])
 df_move = pd.DataFrame.from_dict(data['prob_move'])
 df_link = pd.DataFrame.from_dict(data['prob_link'])
-df_stimulus.to_csv('results/excel/data_stimulus.csv')
-df_interaction.to_csv('results/excel/data_interaction.csv')
-df_move.to_csv('results/excel/data_move.csv')
-df_link.to_csv('results/excel/data_link.csv')
+
+path = make_path('excel')
+df_stimulus.to_csv(f'{path}data_stimulus.csv')
+df_interaction.to_csv(f'{path}data_interaction.csv')
+df_move.to_csv(f'{path}data_move.csv')
+df_link.to_csv(f'{path}data_link.csv')
 
 def plot_param_var_conf(ax, df, var, param, i):
     """
@@ -95,12 +110,11 @@ def plot_all_vars(df, param):
     for i, var in enumerate(problem['names']):
         plot_param_var_conf(axs[i], data[var], var, param, i)
 
+
 ## visualize results
+
 # set location
-result_path = 'results'
-if not os.path.exists(result_path):
-   os.makedirs(result_path)
-result_path += '/'
+result_path = make_path()
 
 plot_all_vars(data, 'voters') 
 plt.savefig(f"{result_path}OFAT.png")

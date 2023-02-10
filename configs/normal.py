@@ -6,7 +6,8 @@
 
 n_runs = 3
 n_agents = 100
-n_iterations = 1000
+n_iterations = 250
+n_distinct_samples = 10
 char_distr = 'normal'
 until_eligible = 4
 characteristics_affected = {'active' : .4,
@@ -22,4 +23,4 @@ prob_link = 1/2
 m_barabasi = 2
 fermi_alpha = 4
 fermi_b = 1.8
-networks = ['homophily']
+networks = ['not_connected', 'homophily', 'holme_kim', 'fully_connected']

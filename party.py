@@ -1,9 +1,12 @@
 ###### party.py
-# 
+# Specifies the Party_model class which is a subclass of a mesa.Model. This 
+# represents the environment of the model and handles all global functionality 
+# like environment variables, data collection, initializing agents, and calling 
+# the agents' step functions each step.
 ####
 
 # Internal imports
-import utils
+from utils import get_config, set_valid
 from agents import Member
 
 # External imports
@@ -19,18 +22,21 @@ from scipy import stats
 
 class Party_model(Model):
     '''
-    description: a Party object holds the environment parameters and manages all the agents.
-    inputs:
-        - prob_stimulus: optional, probability that a stimulus happens to all agents each step
-        - prob_interaction = optional, probability that an agent interacts each step,
-        - prob_move = optional, probability that an agent moves community,
-        - until_eligible = optional, steps needed for new agents to be allowed to vote,
-        - characteristics_affected = optional, dictionary of affected characteristics when agent is
-          exposed to stimulus
-    functions:
+    Description: a Party object holds the environment parameters and manages all the agents.
+    Inputs:
+        - prob_stimulus: probability that a stimulus happens to all agents each step
+        - prob_interaction: probability that an agent interacts each step,
+        - prob_move: probability that an agent moves community,
+        - prob_link: probability that an agent creates a link to another agent during initialization
+        - network: which network structure to initialize the social network of agents with
+        - params: parameters imported from config/[name].py
+        - dynamic: whether the network structure changes over time
+    Functions:
         - add_agent(agent): adds an agent to the model
-        - step(): updates environment and takes a step for each agent
-        - get_pps(): returns data of all agents' political participation over time
+        - init_agents(): initialize all agents of the model 
+                         (must be done in the model for mesa's sensitivity analysis)
+        - step(): updates model environment and takes a step for each agent
+        - get_voters(): returns the number of voters in the model (#agents where agent.pps >= 2)
     '''
 
     def __init__(self,
@@ -42,18 +48,20 @@ class Party_model(Model):
                  params = None,
                  dynamic = False):
         '''
-        description: initializes new Model object
-        inputs:
+        Description: initializes new Model object
+        Inputs:
             - prob_stimulus: probability that a stimulus happens to all agents each step
-            - prob_interaction = probability that an agent interacts each step,
-            - prob_move = probability that an agent moves community,
-            - until_eligible = steps needed for new agents to be allowed to vote,
-            - characteristics_affected = dictionary of effect of stimulus on agent
+            - prob_interaction: probability that an agent interacts each step,
+            - prob_move: probability that an agent moves community,
+            - prob_link: probability that an agent creates a link to another agent during initialization
+            - network: which network structure to initialize the social network of agents with
+            - params: parameters imported from config/[name].py
+            - dynamic: whether the network structure changes over time
         '''
-        self.description = 'A model for testing.'
-        if params is None:
-            params = import_module('configs.' + ('normal' if len(sys.argv) < 2 else sys.argv[1]))
         
+        # Handle Initializing when not provided
+        if params is None:
+            params = get_config()
         if prob_stimulus is None:
             prob_stimulus = params.prob_stimulus
         if prob_interaction is None:
@@ -62,14 +70,29 @@ class Party_model(Model):
             prob_move = params.prob_move
         if prob_link is None:
             prob_link = params.prob_link
+        if network is None:
+            network = params.networks[0]
         
-
-        self.n_runs = params.n_runs
+        # Initialize probabilities and check whether they are in range [0,1]
+        self.prob_stimulus = set_valid(prob_stimulus, 
+                                       upper = 1, 
+                                       verbose = True, 
+                                       name = 'prob_stimulus')
+        self.prob_interaction = set_valid(prob_interaction, 
+                                          upper = 1, 
+                                          verbose = True, 
+                                          name = 'prob_interaction')
+        self.prob_move = set_valid(prob_move, 
+                                   upper = 1, 
+                                   verbose = True, 
+                                   name = 'prob_move')
+        self.prob_link = set_valid(prob_link, 
+                                   upper = 1, 
+                                   verbose = True, 
+                                   name = 'linkage')
+        
+        # Initialize parameters based on config
         self.char_distr = params.char_distr
-        self.prob_stimulus = utils.set_valid(prob_stimulus, upper = 1, verbose = True, name = 'p')
-        self.prob_interaction = utils.set_valid(prob_interaction, upper = 1, verbose = True, name = 'q')
-        self.prob_move = utils.set_valid(prob_move, upper = 1, verbose = True, name = 'r')
-        self.prob_link = utils.set_valid(prob_link, upper = 1, verbose = True, name = 'linkage')
         self.until_eligible = params.until_eligible
         self.characteristics_affected = params.characteristics_affected
         self.edges_per_step = params.edges_per_step
@@ -77,65 +100,67 @@ class Party_model(Model):
         self.m_barabasi = params.m_barabasi
         self.fermi_alpha = params.fermi_alpha
         self.fermi_b = params.fermi_b
+        self.network = network
         self.dynamic = dynamic
-        self.network = network if network is not None else params.networks[0]
-
+        
+        # Initialize standard parameters
         self.schedule = time.RandomActivation(self)
         self.time = 0
         self.agents = np.array([])
         self.stimulus = False
-
+        self.running = True
         self.datacollector = DataCollector(model_reporters = {"voters" : lambda m : self.get_voters()},
                                            agent_reporters = {"political participation" : "pps"})
 
-        # create network
-        self.graph = None
-        if self.network == 'fully_connected':
+        # Create graph
+        if network == 'fully_connected':
             self.graph = nx.complete_graph(n = self.n_agents)
-        elif self.network == "holme_kim":
+        elif network == 'holme_kim':
             self.graph = nx.powerlaw_cluster_graph(n = self.n_agents, m = self.m_barabasi, p = prob_link)
-        elif self.network == 'homophily':
-            self.graph = nx.Graph()
-        elif self.network == "not_connected":
+        elif network in ['homophily', 'not_connected']:
             self.graph = nx.Graph()
         else:
-            raise Exception(f"'{self.network}' is not a valid model structure")
+            raise Exception(f"'{network}' is not a valid model structure")
 
-
+        # Initialize agents and do first datacollection
         self.init_agents()
-        self.running = True
         self.datacollector.collect(self)
 
     def add_agent(self, agent):
         '''
-        description: adds agent to the model
-        input:
-            - agent object to add to the model
+        Description: adds agent to the model and graph
+        Input:
+            - agent: Agent object to add
         '''
+
         self.agents = np.append(self.agents, agent)
         self.schedule.add(agent)
 
-        # Attaches agent to node
-        if (self.network == "homophily") or (self.network == "not_connected"):
+        # Attach agent to node in graph
+        if self.network in ['homophily', 'not_connected']:
             self.graph.add_node(agent)
         else:
             self.graph = nx.relabel_nodes(self.graph, {agent.unique_id: agent})
 
     def init_agents(self):
-        # Create agent characteristics:
-        if self.char_distr == 'normal': # truncated normal distribution, to stay within limits
+        '''
+        Description: initialize all agents of the model and add them to the model (must be done 
+                     in the model for mesa's sensitivity analysis).
+        '''
+
+        # Generate agent characteristics:
+        if self.char_distr == 'normal': # Truncated normal distribution, to stay within limits
             mu = 2
             distr = stats.truncnorm(-mu, mu, loc = mu, scale = 1)
             samples = distr.rvs(self.n_agents * 8)
             characteristics = np.reshape(samples, (self.n_agents, 8))
-        elif self.char_distr == 'uniform': # uniform distribution within limits
+        elif self.char_distr == 'uniform': # Uniform distribution within limits
             characteristics = np.random.uniform(1, 5, (self.n_agents, 8))
 
-        # intialize each agent
+        # Intialize each agent
         for idx in range(self.n_agents):
             agent = Member(idx,
                         self,
-                        # NOTE: This was a flat 20% probability, butit is more natural to make this chance related to prob_move.
                         until_eligible = 0 if random.uniform(0, 1) > self.prob_move else self.until_eligible,
                         vote_duty = random.uniform(0, 1) < .03,
                         active = characteristics[idx, 0],
@@ -147,12 +172,14 @@ class Party_model(Model):
                         expressive = characteristics[idx, 6],
                         social = characteristics[idx, 7],
                         ses = random.randint(1, 3))
+            
+            # Add agent to model
             self.add_agent(agent)
 
 
     def step(self):
         '''
-        description: updates environment and takes a step for each agent
+        Description: updates environment and takes a step for each agent
         '''
         # check whether stimulus happens for all agents
         self.stimulus = random.uniform(0, 1) < self.prob_stimulus
