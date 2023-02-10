@@ -38,15 +38,15 @@ class Party_model(Model):
         - step(): updates model environment and takes a step for each agent
         - get_voters(): returns the number of voters in the model (#agents where agent.pps >= 2)
     '''
+    params = import_module('configs.' + ('normal' if len(sys.argv) < 2 else sys.argv[1]))
 
     def __init__(self,
-                 prob_stimulus = None,
-                 prob_interaction = None,
-                 prob_move = None,
-                 prob_link = None,
-                 network = None,
-                 params = None,
-                 dynamic = False):
+                prob_stimulus = params.prob_stimulus,
+                 prob_interaction = params.prob_interaction,
+                 prob_move = params.prob_move,
+                 prob_link = params.prob_link,              
+                 dynamic = False,
+                 params = None):
         '''
         Description: initializes new Model object
         Inputs:

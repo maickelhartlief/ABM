@@ -54,8 +54,7 @@ for i, var in enumerate(problem['names']):
                         max_steps = max_steps,
                         iterations = replicates,
                         variable_parameters = {var : samples},
-                        model_reporters = model_reporters)
-    
+                        model_reporters = model_reporters)    
     batch.run_all()
     
     data[var] = batch.get_model_vars_dataframe()
