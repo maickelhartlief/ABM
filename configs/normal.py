@@ -4,9 +4,9 @@
 # file as an input variable
 ####
 
-n_runs = 3
+n_runs = 2
 n_agents = 100
-n_iterations = 250
+n_iterations = 400
 char_distr = 'normal'
 until_eligible = 4
 characteristics_affected = {'active' : .4,

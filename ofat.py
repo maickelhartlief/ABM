@@ -100,8 +100,8 @@ def plot_all_vars(df, param):
 
 
 # set location
-result_path = make_path()
+result_path = make_path('sensitivity_analysis')
 
 plot_all_vars(data, 'voters') 
-plt.savefig(f"{result_path}OFAT.png")
+plt.savefig(f"{result_path}ofat.png")
 plt.show()

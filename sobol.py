@@ -114,17 +114,21 @@ def plot_global(Si, problem):
     '''
 
     # set location
-    result_path = make_path('sobol')
+    result_path = make_path('sensitivity_analysis')
     
     # First order
     plot_index(Si, problem['names'], '1', 'First order sensitivity')
-    plt.savefig(f"{result_path}First-order-sensitivity_fully_connected.png")
+    plt.savefig(f"{result_path}first-order_sensitivity_{params.networks[0]}.png")
     plt.clf()
 
     # Total order
     plot_index(Si, problem['names'], 'T', 'Total order sensitivity')
-    plt.savefig(f"{result_path}Total-order-sensitivity_fully_connected.png")
+    plt.savefig(f"{result_path}total-order_sensitivity_{params.networks[0]}.png")
     plt.clf()
+
+print(data)
+print()
+print(data['voters'].values)
 
 Si_voters = sobol.analyze(problem, data['voters'].values, calc_second_order = False)
 plot_global(Si_voters, problem)
